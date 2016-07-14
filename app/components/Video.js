@@ -42,7 +42,7 @@ export default class Video extends React.Component {
 
 	componentWillMount() {
 		const peerId = this.props.user.cuid
-		this.peer = new Peer({ host: '192.168.1.169', port: 3000, debug: 3, path: '/connect', metadata: {cuid:peerId}});
+		this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: {cuid:peerId}});
 		this.peer.on('open', this.open);
 		this.peer.on('call', this.onCall);
 		this.peer.on('error', this.error);

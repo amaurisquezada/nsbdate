@@ -22,20 +22,19 @@ export class App extends React.Component {
   }
 
   componentDidMount() {
-    if (this.state.user.cuid === undefined){
+    if (!this.state.user.cuid){
       this.receiveUser()
-    }    
+    }   
   }
 
   receiveUser() {
-      AppActions.currentUser()
+    AppActions.currentUser()
   }
 
   render() {
-  	 const childrenWithProps = React.Children.map(this.props.children,
-     (child) => React.cloneElement(child, {
-     		user: this.state.user,
-     		available: this.state.available
+	  const childrenWithProps = React.Children.map(this.props.children, (child) => React.cloneElement(child, {
+   	 	user: this.state.user,
+   	 	available: this.state.available
      })
     )
 

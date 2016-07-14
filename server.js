@@ -252,7 +252,7 @@ socket.on('sendSocket', function(payload) {
 
 })
 
-server.listen(app.get('port'), '0.0.0.0', function() {
+server.listen(app.get('port'), function() {
   console.log('Peer Express server listening on port ' + app.get('port'));
 });
 

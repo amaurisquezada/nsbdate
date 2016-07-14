@@ -16,7 +16,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function currentUser() {
   var user = arguments.length <= 0 || arguments[0] === undefined ? "Amauris" : arguments[0];
 
-  $.ajax({ url: '/api/currentUser', data: user }).done(function (data) {
+  $.ajax({
+    url: '/api/currentUser',
+    data: user
+  }).done(function (data) {
     _dispatcher2.default.dispatch({
       type: "CURRENT_USER",
       currentUser: data
@@ -95,7 +98,6 @@ function deleteUser(id) {
 
 function receiveUsers() {
   $.ajax({ url: '/api/users' }).done(function (data) {
-    console.log(data);
     _dispatcher2.default.dispatch({
       type: "RECEIVE_USERS",
       users: data
@@ -117,21 +119,19 @@ function signout() {
     url: '/api/signout',
     type: 'POST'
   }).done(function (data) {
-    _dispatcher2.default.dispatch({
-      type: "SIGN_OUT"
-    });
+    _dispatcher2.default.dispatch({ type: "SIGN_OUT" });
   });
 }
 
 },{"../dispatcher":12}],4:[function(require,module,exports){
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.addToPreviousChats = addToPreviousChats;
 
-var _dispatcher = require("../dispatcher");
+var _dispatcher = require('../dispatcher');
 
 var _dispatcher2 = _interopRequireDefault(_dispatcher);
 
@@ -161,16 +161,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // }
 
 function addToPreviousChats(id, myId) {
-  console.log(myId, "myId from ajax");
-  console.log(id, "id from ajax");
   $.ajax({
     type: 'PUT',
     url: '/api/atpc',
     data: { peerId: id, myId: myId }
   }).done(function (data) {
-    _dispatcher2.default.dispatch({
-      type: "ADD_TO_PREVIOUS_CHATS"
-    });
+    _dispatcher2.default.dispatch({ type: "ADD_TO_PREVIOUS_CHATS" });
   }).fail(function (err) {
     console.log(err);
   });
@@ -237,7 +233,7 @@ var App = exports.App = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      if (this.state.user.cuid === undefined) {
+      if (!this.state.user.cuid) {
         this.receiveUser();
       }
     }
@@ -932,7 +928,7 @@ var Video = function (_React$Component) {
 		key: 'componentWillMount',
 		value: function componentWillMount() {
 			var peerId = this.props.user.cuid;
-			this.peer = new Peer({ host: '192.168.1.169', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId } });
+			this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId } });
 			this.peer.on('open', this.open);
 			this.peer.on('call', this.onCall);
 			this.peer.on('error', this.error);
