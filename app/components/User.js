@@ -77,13 +77,13 @@ export class User extends React.Component {
     return(
           <div className="container">
             <Nav1/>
-            <Button onClick={this.check}>See State</Button>
-            <Button onClick={this.amauris}>Sign in as Amauris</Button>
-            <Button onClick={this.austin}>Sign in as Austin</Button>
-            <Button onClick={this.maia}>Sign in as Maia</Button>
-            <Button onClick={this.diffchick}>Sign in as Diff Chick</Button>
-            <Button onClick={this.lastgirl}>Sign in as Last Girl</Button>
-            <Button onClick={this.reggie}>Sign in as Reggie</Button>
+            <Button onClick={this.check} className="temp-si">See State</Button>
+            <Button onClick={this.amauris} className="temp-si">Sign in as Amauris</Button>
+            <Button onClick={this.austin} className="temp-si">Sign in as Austin</Button>
+            <Button onClick={this.maia} className="temp-si">Sign in as Maia</Button>
+            <Button onClick={this.diffchick} className="temp-si">Sign in as Diff Chick</Button>
+            <Button onClick={this.lastgirl} className="temp-si">Sign in as Last Girl</Button>
+            <Button onClick={this.reggie} className="temp-si">Sign in as Reggie</Button>
             <Display if={this.state.user.available}>
               <Video user={this.state.user}/>
             </Display>

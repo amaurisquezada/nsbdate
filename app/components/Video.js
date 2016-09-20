@@ -2,6 +2,7 @@ import React from 'react'
 import io from 'socket.io-client'
 import root from 'window-or-global'
 import { Glyphicon } from 'react-bootstrap'
+import Display from './Display'
 import * as VideoActions from '../actions/VideoActions'
 import VideoStore from '../stores/VideoStore'
 
@@ -26,7 +27,9 @@ export default class Video extends React.Component {
 		this.noEligibleUsers = this.noEligibleUsers.bind(this)
 		this.closeEvent = this.closeEvent.bind(this)
 		this.peerSocket = this.peerSocket.bind(this)
-		this.like = this.like.bind(this)
+		this.makeSelection = this.makeSelection.bind(this)
+		this.likeHandler = this.likeHandler.bind(this)
+		this.newMatch = this.newMatch.bind(this)
 		this.step1 = this.step1.bind(this)
 		this.step2 = this.step2.bind(this)
 		this.step3 = this.step3.bind(this)
@@ -36,7 +39,8 @@ export default class Video extends React.Component {
 			buttonStatus: true, 
 			mySocket: '',
 			peerSocket: '',
-			peerCuid: ''
+			peerCuid: '',
+			selecting: false
 		}
 	}
 
@@ -48,10 +52,12 @@ export default class Video extends React.Component {
 		this.peer.on('error', this.error);
 		this.socket = io()
 		this.socket.on('connect', this.connect);
+		this.socket.on('makeSelection', this.makeSelection);
 		this.socket.on('peerSocket', this.peerSocket);
 		this.socket.on('closeEvent', this.closeEvent);
 		this.socket.on('idRetrieval', this.idRetrieval)
 		this.socket.on('noEligibleUsers', this.noEligibleUsers)
+		this.socket.on('newMatch', this.newMatch)
     VideoStore.on('change', this.nextMatch)
 	}
 
@@ -121,12 +127,21 @@ export default class Video extends React.Component {
 
 	reject() {
 		window.existingCall.close()
+		this.setState({selecting: false})
 		this.socket.emit('rejected', this.state.peerSocket)
 	}
 
-	like() {
-		console.log(this.peer.id, "my id")
-		console.log(window.existingCall.peer, "other id")		
+	likeHandler() {
+		if(this.state.selecting){
+			this.socket.emit('likeToo', {myId:this.props.user.cuid, peerId:this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket})
+		} else {
+			this.socket.emit('liked', {myId:this.props.user.cuid, peerId:this.state.peerCuid, peerSocket: this.state.peerSocket})
+		}		
+			this.setState({selecting: false})		
+	}
+
+	makeSelection() {
+		this.setState({selecting:true})
 	}
 
 	noEligibleUsers() {
@@ -144,6 +159,9 @@ export default class Video extends React.Component {
 
 	peerSocket(payload) {
 		this.setState({peerSocket: payload})
+	}
+	newMatch(){
+		alert("SHE LIKES MEEEEEE")
 	}
 
 	onCall(call) {
@@ -203,45 +221,6 @@ export default class Video extends React.Component {
 	render() {
 		const mySource = this.state.mySource
 		const otherSource = this.state.otherSource
-
-		const vidContainerStyle = {
-			position: 'fixed',
-			width: '85%',
-			height: '100%'
-		}
-
-		const myVideoStyle = {
-			height: '20vh',
-			width: '30%',
-			position: 'relative',
-			zIndex: 4,
-			left: '70%',
-			top: '1%'
-		}
-
-		const peerVideoStyle = {
-			height: '76vh',
-			width: '100%',
-			position: 'relative',
-			bottom: '20vh',
-			right: '5%'
-		}
-
-		const leftButtonStyle = {
-			fontSize: '100px',
-			zIndex: 6,
-			position: 'absolute',
-			bottom: '18vh',
-		}
-
-		const rightButtonStyle = {
-			fontSize: '100px',
-			zIndex: 6,
-			position: 'absolute',
-			bottom: '18vh',
-			right: '3%'
-		}
-
 		const buttonStatus = this.state.buttonStatus
 
 		const leftButtonClass = buttonStatus ? "disabled-button" : "text-danger g-arrows"
@@ -249,20 +228,28 @@ export default class Video extends React.Component {
 		const rightButtonClass = buttonStatus ? "disabled-button" : "text-success g-arrows"
 
 		return (
-				<div id="vid-container" style={vidContainerStyle}>
-					<video id='#my-video' style={myVideoStyle} src={mySource} autoPlay >
+			<div>
+
+				<div id="vid-container">
+					<video id='my-video' src={mySource} autoPlay >
 					</video>
-					<video id='#other-video' style={peerVideoStyle} src={otherSource} autoPlay >
+					<video id='other-video' src={otherSource} autoPlay >
 					</video>
-					<div id="left-button-container" style={leftButtonStyle}>
+					<div id="left-button-container">
             <p className="arrow-labels">Not for me</p>
             <Glyphicon glyph="arrow-left" className={leftButtonClass} onClick={buttonStatus ? null : this.reject} ></Glyphicon>
           </div>
-          <div id="right-button-container" style={rightButtonStyle}>
+          <div id="right-button-container">
             <p className="arrow-labels">Like!</p>
-            <Glyphicon glyph="arrow-right" className={rightButtonClass} onClick={buttonStatus ? null : this.like} ></Glyphicon>
+            <Glyphicon glyph="arrow-right" className={rightButtonClass} onClick={buttonStatus ? null : this.likeHandler} ></Glyphicon>
           </div>
 				</div>
+				<Display if={this.state.selecting}>
+					<div id="test-div-1">
+						<h3>The video chat has ended. Please make a selection!</h3>
+					</div>
+				</Display>
+			</div>
 			)
 	}
 }

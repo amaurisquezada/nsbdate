@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-
+var convoSchema = require('./conversation').schema;
 var userSchema = new Schema({
   firstName: {
               type: String,
@@ -36,6 +36,9 @@ var userSchema = new Schema({
               default: Date.now
             },
   previousChats: [String],
+  rejects: [String],
+  likes: [String],
+  conversations: [ convoSchema ],
   facebook: {}
 });
 

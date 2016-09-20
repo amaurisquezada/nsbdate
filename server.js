@@ -5,6 +5,8 @@ var bodyParser = require('body-parser');
 require('babel-register');
 var mongoose = require('mongoose');
 var User = require('./models/user');
+var Convo = require('./models/conversation');
+var Message = require('./models/message');
 var swig  = require('swig');
 var React = require('react');
 var ReactDOM = require('react-dom/server');
@@ -23,6 +25,7 @@ var ExpressPeerServer = require('peer').ExpressPeerServer;
 
 var menSeekingWomen = []
 var womenSeekingMen = []
+var connectedUsers = []
 
 mongoose.connect(config.database);
 mongoose.connection.on('error', function() {
@@ -207,6 +210,14 @@ var io = require('socket.io')(server);
 
 io.sockets.on('connection', function(socket){
   console.log("New user conncected")
+  connectedUsers.push(socket)
+
+socket.on('disconnect', function(){
+  connectedUsers.pop();
+  if (connectedUsers.length < 1){
+    womenSeekingMen = [];
+  }
+})
 
 socket.on('addToWsm', function(payload){
   console.log(payload)
@@ -245,8 +256,67 @@ socket.on('rejected', function(payload) {
   this.broadcast.to('/#' + payload).emit('closeEvent')
 })
 
+socket.on('liked', function(payload) {
+
+  User.findOne({ cuid: payload.myId }, function(err, user) {
+    if (err) return next(err);
+      console.log(err)
+    if (!user) {
+      return res.status(404).send({ message: 'User not found.' });
+    }
+    user.likes.push(payload.peerId)
+    user.save()
+  });
+
+  this.broadcast.to('/#' + payload.peerSocket).emit('makeSelection')
+})
+
 socket.on('sendSocket', function(payload) {
   this.broadcast.to('/#'+ payload.destination).emit('peerSocket', payload.socketId)
+})
+
+socket.on('likeToo', function(payload){
+  var female = payload.myGender == "Female" ? payload.myId : payload.peerId;
+  var male = payload.myGender == "Male" ? payload.myId : payload.peerId;
+  var user1, user2;
+
+  User.findOne({ cuid: female }, function(err, user) {
+    if (err) return next(err);
+      console.log(err)
+    if (!user) {
+      return res.status(404).send({ message: 'User not found.' });
+    }
+    user1 = user;
+
+
+  User.findOne({ cuid: male }, function(err, otherUser) {
+    if (err) return next(err);
+      console.log(err)
+    if (!otherUser) {
+      return res.status(404).send({ message: 'User not found.' });
+    }
+    user2 = otherUser;
+    var convo = new Convo({
+      user1: user1,
+      user2: user2
+    });
+    convo.save();
+    user.conversations.push(convo);
+    otherUser.conversations.push(convo);
+    user.save();
+    otherUser.save();
+  });
+});
+
+
+
+
+
+
+
+
+
+  this.broadcast.to('/#'+ payload.peerSocket).emit('newMatch', {})
 })
 
 

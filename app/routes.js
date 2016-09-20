@@ -4,6 +4,7 @@ import App from './components/App';
 import Login from './components/Login';
 import User from './components/User';
 import NewUser from './components/NewUser';
+import Chat from './components/Chat';
 import AppStore from './stores/AppStore'
 
 
@@ -22,6 +23,7 @@ export default (
   <Route component={App}>
   	<Route path='/login' component={Login} />
     <Route path='/newuser' component={NewUser} />
+    <Route path='/mychats' component={Chat} />
     <Route path='/' component={User} />
   </Route>
 );
