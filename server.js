@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 require('babel-register');
 var mongoose = require('mongoose');
 var User = require('./models/user');
-var Convo = require('./models/conversation');
+var Conversation = require('./models/conversation');
 var Message = require('./models/message');
 var swig  = require('swig');
 var React = require('react');
@@ -106,6 +106,39 @@ app.get('/api/users', function(req, res, next) {
         return res.send(users);
       }
     });
+});
+
+app.get('/api/get-convos', function(req, res, next) {
+
+  var gender = req.session.user.gender == "Male" ? "Male" : "Female"
+
+  if (gender == "Male") {
+
+      Conversation
+          .find({'user2': req.session.user._id})
+          .exec(function(err, convo) {
+          if (err) return next(err);
+          var obj = {};
+          for (var i = 0; i < convo.length; i++){
+            obj[convo[i].femaleFn] = convo;
+          }
+          res.send(obj);
+          console.log(obj, "from server sonnn")
+        });
+    } else {
+
+      Conversation
+          .find({'user1': req.session.user._id})
+          .exec(function(err, convo) {
+          if (err) return next(err);
+          var obj = {};
+          for (var i = 0; i < convo.length; i++){
+            obj[convo[i].maleFn] = convo;
+          }
+          res.send(obj);
+          console.log(obj, "from server sonnn")
+        });
+    }
 });
 
 
@@ -296,9 +329,11 @@ socket.on('likeToo', function(payload){
       return res.status(404).send({ message: 'User not found.' });
     }
     user2 = otherUser;
-    var convo = new Convo({
+    var convo = new Conversation({
       user1: user1,
-      user2: user2
+      femaleFn: user1.firstName,
+      user2: user2,
+      maleFn: user2.firstName
     });
     convo.save();
     user.conversations.push(convo);
