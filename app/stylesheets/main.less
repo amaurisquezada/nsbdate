@@ -85,3 +85,33 @@
 #site-header {
 	font-size: 3.06vw;
 }
+
+#chat-container {
+	width: 100%;
+	height: 80vh;
+	border: 1px black solid;
+}
+
+#matched-container {
+	width: 30%;
+	height: 100%;
+	border-right: 5px solid grey;
+	overflow-y: auto;
+}
+
+#matched-container::-webkit-scrollbar { 
+    display: none; 
+}
+
+.matches {
+	width: 100%;
+	height: 13vh;
+	border-top: 1px groove grey;
+	border-bottom: 1px groove grey;
+}
+
+@media (max-width: 588px) {
+  #site-header{
+    font-size: 17.9928px;
+  }
+}

@@ -1,6 +1,7 @@
 import React from 'react'
 import io from 'socket.io-client'
 import Display from './Display'
+import Nav1 from './Nav1'
 import ChatStore from '../stores/ChatStore'
 import * as ChatActions from '../actions/ChatActions'
 
@@ -10,8 +11,7 @@ export default class Chat extends React.Component {
 		super()
 		this.convoTrigger = this.convoTrigger.bind(this)
 		this.state = {
-			grabbed: false,
-      convos: {"":""}
+      convos: ChatStore.getConvos()
     }
 	}
 
@@ -25,21 +25,24 @@ export default class Chat extends React.Component {
 
   convoTrigger(){
   	ChatActions.getConvos();
-  	this.setState({grabbed:true})
   	console.log(this.state)
   }
 
 	render(){
     const names = Object.keys(this.state.convos);
     const namesList = names.map(function(name, i){
-                    return <h2 key={i}>{name}</h2>;
+                    return <div className="matches" key={i}>
+                    					<h2 key={i}>{name}</h2>
+                    				</div>;
                   })
 		return (
-							<div>
-								<h1 onClick={this.convoTrigger}>"Hello World"</h1>
-									<Display if={this.state.grabbed}>
+							<div className="container">
+								<Nav1/>
+								<div id="chat-container">
+									<div id="matched-container">
 										{namesList}
-									</Display>
+									</div>
+								</div>
 							</div>
 					 )
 	}
@@ -50,3 +53,7 @@ export default class Chat extends React.Component {
 
 
 }
+								// <h1 onClick={this.convoTrigger}>"Hello World"</h1>
+								// 	<Display if={this.state.grabbed}>
+								// 		{namesList}
+								// 	</Display>

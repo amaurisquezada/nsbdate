@@ -123,7 +123,6 @@ app.get('/api/get-convos', function(req, res, next) {
             obj[convo[i].femaleFn] = convo;
           }
           res.send(obj);
-          console.log(obj, "from server sonnn")
         });
     } else {
 
@@ -136,7 +135,6 @@ app.get('/api/get-convos', function(req, res, next) {
             obj[convo[i].maleFn] = convo;
           }
           res.send(obj);
-          console.log(obj, "from server sonnn")
         });
     }
 });

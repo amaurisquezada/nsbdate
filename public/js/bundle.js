@@ -299,7 +299,7 @@ exports.default = App;
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
-  value: true
+	value: true
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -315,6 +315,10 @@ var _socket2 = _interopRequireDefault(_socket);
 var _Display = require('./Display');
 
 var _Display2 = _interopRequireDefault(_Display);
+
+var _Nav = require('./Nav1');
+
+var _Nav2 = _interopRequireDefault(_Nav);
 
 var _ChatStore = require('../stores/ChatStore');
 
@@ -335,73 +339,80 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Chat = function (_React$Component) {
-  _inherits(Chat, _React$Component);
+	_inherits(Chat, _React$Component);
 
-  function Chat() {
-    _classCallCheck(this, Chat);
+	function Chat() {
+		_classCallCheck(this, Chat);
 
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
 
-    _this.convoTrigger = _this.convoTrigger.bind(_this);
-    _this.state = {
-      grabbed: false,
-      convos: { "": "" }
-    };
-    return _this;
-  }
+		_this.convoTrigger = _this.convoTrigger.bind(_this);
+		_this.state = {
+			convos: _ChatStore2.default.getConvos()
+		};
+		return _this;
+	}
 
-  _createClass(Chat, [{
-    key: 'componentWillMount',
-    value: function componentWillMount() {
-      var _this2 = this;
+	_createClass(Chat, [{
+		key: 'componentWillMount',
+		value: function componentWillMount() {
+			var _this2 = this;
 
-      _ChatStore2.default.on('change', function () {
-        _this2.setState({
-          convos: _ChatStore2.default.getConvos()
-        });
-      });
-    }
-  }, {
-    key: 'convoTrigger',
-    value: function convoTrigger() {
-      ChatActions.getConvos();
-      this.setState({ grabbed: true });
-      console.log(this.state);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var names = Object.keys(this.state.convos);
-      var namesList = names.map(function (name, i) {
-        return _react2.default.createElement(
-          'h2',
-          { key: i },
-          name
-        );
-      });
-      return _react2.default.createElement(
-        'div',
-        null,
-        _react2.default.createElement(
-          'h1',
-          { onClick: this.convoTrigger },
-          '"Hello World"'
-        ),
-        _react2.default.createElement(
-          _Display2.default,
-          { 'if': this.state.grabbed },
-          namesList
-        )
-      );
-    }
-  }]);
+			_ChatStore2.default.on('change', function () {
+				_this2.setState({
+					convos: _ChatStore2.default.getConvos()
+				});
+			});
+		}
+	}, {
+		key: 'convoTrigger',
+		value: function convoTrigger() {
+			ChatActions.getConvos();
+			console.log(this.state);
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var names = Object.keys(this.state.convos);
+			var namesList = names.map(function (name, i) {
+				return _react2.default.createElement(
+					'div',
+					{ className: 'matches', key: i },
+					_react2.default.createElement(
+						'h2',
+						{ key: i },
+						name
+					)
+				);
+			});
+			return _react2.default.createElement(
+				'div',
+				{ className: 'container' },
+				_react2.default.createElement(_Nav2.default, null),
+				_react2.default.createElement(
+					'div',
+					{ id: 'chat-container' },
+					_react2.default.createElement(
+						'div',
+						{ id: 'matched-container' },
+						namesList
+					)
+				)
+			);
+		}
+	}]);
 
-  return Chat;
+	return Chat;
 }(_react2.default.Component);
+// <h1 onClick={this.convoTrigger}>"Hello World"</h1>
+// 	<Display if={this.state.grabbed}>
+// 		{namesList}
+// 	</Display>
+
 
 exports.default = Chat;
 
-},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"react":"react","socket.io-client":312}],8:[function(require,module,exports){
+},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"./Nav1":10,"react":"react","socket.io-client":312}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -541,6 +552,10 @@ var _AppActions = require('../actions/AppActions');
 
 var AppActions = _interopRequireWildcard(_AppActions);
 
+var _ChatActions = require('../actions/ChatActions');
+
+var ChatActions = _interopRequireWildcard(_ChatActions);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -583,7 +598,7 @@ var Nav1 = function (_React$Component) {
         ),
         _react2.default.createElement(
           _reactRouter.Link,
-          { className: 'btn btn-default nav-buttons', eventKey: 2, to: '/mychats' },
+          { className: 'btn btn-default nav-buttons', onClick: ChatActions.getConvos, eventKey: 2, to: '/mychats' },
           'My Chats'
         ),
         _react2.default.createElement(
@@ -605,7 +620,7 @@ var Nav1 = function (_React$Component) {
 
 exports.default = Nav1;
 
-},{"../actions/AppActions":1,"react":"react","react-bootstrap":138,"react-router":"react-router"}],11:[function(require,module,exports){
+},{"../actions/AppActions":1,"../actions/ChatActions":2,"react":"react","react-bootstrap":138,"react-router":"react-router"}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1249,7 +1264,7 @@ var Video = function (_React$Component) {
 				chatLimit = setTimeout(function () {
 					window.existingCall.close();
 					alert("hey man!");
-				}, 25000);
+				}, 10000);
 			});
 			window.existingCall = call;
 			call.on('close', function () {
