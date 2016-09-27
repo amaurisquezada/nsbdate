@@ -118,11 +118,7 @@ app.get('/api/get-convos', function(req, res, next) {
           .find({'user2': req.session.user._id})
           .exec(function(err, convo) {
           if (err) return next(err);
-          var obj = {};
-          for (var i = 0; i < convo.length; i++){
-            obj[convo[i].femaleFn] = convo;
-          }
-          res.send(obj);
+          res.send(convo);
         });
     } else {
 
@@ -130,14 +126,32 @@ app.get('/api/get-convos', function(req, res, next) {
           .find({'user1': req.session.user._id})
           .exec(function(err, convo) {
           if (err) return next(err);
-          var obj = {};
-          for (var i = 0; i < convo.length; i++){
-            obj[convo[i].maleFn] = convo;
-          }
-          res.send(obj);
+          res.send(convo);
         });
     }
 });
+
+app.put('/api/amtc', function(req, res, next) {
+  console.log(req.body, "req check from server")
+  var id = req.body.convoId
+  Conversation.findById(id, function(err, convo) {
+    if (err) return next(err);
+      console.log(err)
+    if (!convo) {
+      return res.status(404).send({ message: 'Convo not found.' });
+    }
+    var message = new Message({
+      text: req.body.text,
+      user: req.body.authorId
+    });
+    message.save()
+    convo.messages.push(message)
+    convo.save()
+    res.status(200).send({ message: 'Message Added.' })
+  });
+});
+
+
 
 
 app.get('/api/currentUser', function(req, res, next) {

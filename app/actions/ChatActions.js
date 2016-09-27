@@ -9,3 +9,17 @@ export function getConvos() {
          })
       })
 }
+
+export function addMessageToConversation(convoId, authorId, text) {
+  $.ajax({
+    type: 'PUT',
+    url: '/api/amtc' ,
+    data: {convoId, authorId, text}
+  })
+    .done((data) => {
+      dispatcher.dispatch({type: "ADD_TO_CURRENT_CONVO"})
+    })
+    .fail((err) => {
+      console.log(err);
+    })
+}

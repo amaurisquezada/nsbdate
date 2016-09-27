@@ -45,6 +45,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getConvos = getConvos;
+exports.addMessageToConversation = addMessageToConversation;
 
 var _dispatcher = require('../dispatcher');
 
@@ -58,6 +59,18 @@ function getConvos() {
       type: "USER_CONVOS",
       convos: data
     });
+  });
+}
+
+function addMessageToConversation(convoId, authorId, text) {
+  $.ajax({
+    type: 'PUT',
+    url: '/api/amtc',
+    data: { convoId: convoId, authorId: authorId, text: text }
+  }).done(function (data) {
+    _dispatcher2.default.dispatch({ type: "ADD_TO_CURRENT_CONVO" });
+  }).fail(function (err) {
+    console.log(err);
   });
 }
 
@@ -299,7 +312,7 @@ exports.default = App;
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
-	value: true
+		value: true
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -339,70 +352,110 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Chat = function (_React$Component) {
-	_inherits(Chat, _React$Component);
+		_inherits(Chat, _React$Component);
 
-	function Chat() {
-		_classCallCheck(this, Chat);
+		function Chat() {
+				_classCallCheck(this, Chat);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
+				var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
 
-		_this.convoTrigger = _this.convoTrigger.bind(_this);
-		_this.state = {
-			convos: _ChatStore2.default.getConvos()
-		};
-		return _this;
-	}
-
-	_createClass(Chat, [{
-		key: 'componentWillMount',
-		value: function componentWillMount() {
-			var _this2 = this;
-
-			_ChatStore2.default.on('change', function () {
-				_this2.setState({
-					convos: _ChatStore2.default.getConvos()
-				});
-			});
+				_this.convoTrigger = _this.convoTrigger.bind(_this);
+				_this.onSubmit = _this.onSubmit.bind(_this);
+				_this.handleChange = _this.handleChange.bind(_this);
+				_this.onMatchClick = _this.onMatchClick.bind(_this);
+				_this.state = {
+						convos: _ChatStore2.default.getConvos()
+				};
+				return _this;
 		}
-	}, {
-		key: 'convoTrigger',
-		value: function convoTrigger() {
-			ChatActions.getConvos();
-			console.log(this.state);
-		}
-	}, {
-		key: 'render',
-		value: function render() {
-			var names = Object.keys(this.state.convos);
-			var namesList = names.map(function (name, i) {
-				return _react2.default.createElement(
-					'div',
-					{ className: 'matches', key: i },
-					_react2.default.createElement(
-						'h2',
-						{ key: i },
-						name
-					)
-				);
-			});
-			return _react2.default.createElement(
-				'div',
-				{ className: 'container' },
-				_react2.default.createElement(_Nav2.default, null),
-				_react2.default.createElement(
-					'div',
-					{ id: 'chat-container' },
-					_react2.default.createElement(
-						'div',
-						{ id: 'matched-container' },
-						namesList
-					)
-				)
-			);
-		}
-	}]);
 
-	return Chat;
+		_createClass(Chat, [{
+				key: 'componentWillMount',
+				value: function componentWillMount() {
+						var _this2 = this;
+
+						_ChatStore2.default.on('change', function () {
+								_this2.setState({
+										convos: _ChatStore2.default.getConvos(),
+										input: "",
+										currentConvo: ""
+								});
+						});
+				}
+		}, {
+				key: 'convoTrigger',
+				value: function convoTrigger() {
+						ChatActions.getConvos();
+						console.log(this.state);
+				}
+		}, {
+				key: 'handleChange',
+				value: function handleChange(e) {
+						this.setState({ input: e.target.value });
+				}
+		}, {
+				key: 'onSubmit',
+				value: function onSubmit(e) {
+						e.preventDefault();
+						var inputText = this.refs.form.value;
+						ChatActions.addMessageToConversation(this.state.currentConvo._id, this.props.user._id, inputText);
+						this.refs.form.value = "";
+						this.setState({ input: "" });
+				}
+		}, {
+				key: 'onMatchClick',
+				value: function onMatchClick(match, e) {
+						this.setState({ currentConvo: match });
+				}
+		}, {
+				key: 'render',
+				value: function render() {
+						var _this3 = this;
+
+						var currentUserId = this.props.user._id;
+						var convos = this.state.convos;
+						var convosList = convos.map(function (match, i) {
+								var boundMatchClick = _this3.onMatchClick.bind(_this3, match);
+								return _react2.default.createElement(
+										'div',
+										{ className: 'matches', key: i, onClick: boundMatchClick, ref: match._id },
+										_react2.default.createElement(
+												'h2',
+												{ key: i, ref: match._id },
+												currentUserId == match.user1 ? match.maleFn : match.femaleFn
+										)
+								);
+						});
+						var buttonColor = !this.state.input ? { color: "grey" } : { color: "black" };
+						return _react2.default.createElement(
+								'div',
+								{ className: 'container' },
+								_react2.default.createElement(_Nav2.default, null),
+								_react2.default.createElement(
+										'div',
+										{ id: 'chat-container' },
+										_react2.default.createElement(
+												'div',
+												{ id: 'matched-container' },
+												convosList
+										),
+										_react2.default.createElement(
+												'div',
+												{ id: 'message-container' },
+												_react2.default.createElement('div', { className: 'messages' }),
+												_react2.default.createElement(
+														'form',
+														{ id: 'text-form', onSubmit: this.onSubmit },
+														_react2.default.createElement('input', { type: 'text', className: 'text-field', ref: 'form', value: this.state.input, onChange: this.handleChange }),
+														_react2.default.createElement('input', { type: 'submit', value: 'Send', className: 'submit-button', disabled: !this.state.input, style: buttonColor })
+												)
+										)
+								)
+						);
+				}
+		}]);
+
+		return Chat;
 }(_react2.default.Component);
 // <h1 onClick={this.convoTrigger}>"Hello World"</h1>
 // 	<Display if={this.state.grabbed}>
@@ -1264,7 +1317,7 @@ var Video = function (_React$Component) {
 				chatLimit = setTimeout(function () {
 					window.existingCall.close();
 					alert("hey man!");
-				}, 10000);
+				}, 25000);
 			});
 			window.existingCall = call;
 			call.on('close', function () {
