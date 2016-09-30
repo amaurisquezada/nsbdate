@@ -8,8 +8,7 @@ var messageSchema = new Schema({
               type: String,
               required:true
             },
-  user: [ {type : mongoose.Schema.ObjectId, ref : 'User'} ],
-  conversation: [ {type : mongoose.Schema.ObjectId, ref : 'Convo'} ],
+  user: {type : mongoose.Schema.ObjectId, ref : 'User'},
   dateCreated: {
               type: Date,
               default: Date.now

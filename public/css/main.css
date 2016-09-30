@@ -7344,9 +7344,11 @@ img.mfp-img {
   height: 100%;
   border-right: 5px solid black;
   float: left;
+  overflow-y: hidden;
 }
 .messages {
   overflow-y: auto;
+  height: 90%;
 }
 .text-field {
   width: calc(100% - 50px);
@@ -7364,10 +7366,34 @@ img.mfp-img {
 }
 .matches {
   width: 100%;
-  height: 13vh;
+  height: 11vh;
   border-top: 1px groove grey;
   border-bottom: 1px groove grey;
   cursor: pointer;
+  line-height: 6.1;
+}
+.matches h2 {
+  display: inline;
+}
+.notification,
+.new-message {
+  height: 8px;
+  width: 8px;
+  border-radius: 4px;
+  float: left;
+  margin: 0 5px;
+  position: relative;
+  top: 5vh;
+  display: inline;
+}
+.new-message {
+  background-color: #007AFF;
+}
+.my-messages {
+  border: 1px solid blue;
+}
+.other-messages {
+  border: 1px solid pink;
 }
 @media (max-width: 588px) {
   #site-header {

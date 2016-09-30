@@ -355,15 +355,27 @@ socket.on('likeToo', function(payload){
   });
 });
 
-
-
-
-
-
-
-
-
   this.broadcast.to('/#'+ payload.peerSocket).emit('newMatch', {})
+})
+
+socket.on('subscribe', function(room) { 
+        console.log('joining room', room);
+        socket.join(room); 
+})
+
+socket.on('newMessage', function(payload){
+  Conversation.findById(payload.convoId, function(err, convo) {
+    if (err) return next(err);
+      console.log(err)
+    var message = new Message({
+      text: payload.text,
+      user: payload.authorId
+    });
+    message.save()
+    convo.messages.push(message)
+    convo.save()
+    io.to(payload.convoId).emit('updateMessages', convo)
+  });
 })
 
 

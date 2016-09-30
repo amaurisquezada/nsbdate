@@ -45,7 +45,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getConvos = getConvos;
-exports.addMessageToConversation = addMessageToConversation;
 
 var _dispatcher = require('../dispatcher');
 
@@ -62,17 +61,22 @@ function getConvos() {
   });
 }
 
-function addMessageToConversation(convoId, authorId, text) {
-  $.ajax({
-    type: 'PUT',
-    url: '/api/amtc',
-    data: { convoId: convoId, authorId: authorId, text: text }
-  }).done(function (data) {
-    _dispatcher2.default.dispatch({ type: "ADD_TO_CURRENT_CONVO" });
-  }).fail(function (err) {
-    console.log(err);
-  });
-}
+// export function addMessageToConversation(convoId, authorId, text) {
+//   $.ajax({
+//     type: 'PUT',
+//     url: '/api/amtc' ,
+//     data: {convoId, authorId, text}
+//   })
+//     .done((data) => {
+//       dispatcher.dispatch({
+//         type: "ADD_TO_CURRENT_CONVO",
+//         currentConvo: data
+//       })
+//     })
+//     .fail((err) => {
+//       console.log(err);
+//     })
+// }
 
 },{"../dispatcher":14}],3:[function(require,module,exports){
 'use strict';
@@ -312,7 +316,7 @@ exports.default = App;
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
-		value: true
+  value: true
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -352,110 +356,165 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Chat = function (_React$Component) {
-		_inherits(Chat, _React$Component);
+  _inherits(Chat, _React$Component);
 
-		function Chat() {
-				_classCallCheck(this, Chat);
+  function Chat() {
+    _classCallCheck(this, Chat);
 
-				var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
 
-				_this.convoTrigger = _this.convoTrigger.bind(_this);
-				_this.onSubmit = _this.onSubmit.bind(_this);
-				_this.handleChange = _this.handleChange.bind(_this);
-				_this.onMatchClick = _this.onMatchClick.bind(_this);
-				_this.state = {
-						convos: _ChatStore2.default.getConvos()
-				};
-				return _this;
-		}
+    _this.onSubmit = _this.onSubmit.bind(_this);
+    _this.handleChange = _this.handleChange.bind(_this);
+    _this.onMatchClick = _this.onMatchClick.bind(_this);
+    _this.updateMessages = _this.updateMessages.bind(_this);
+    _this.state = {
+      convos: _ChatStore2.default.getConvos(),
+      input: "",
+      currentConvo: []
+    };
+    return _this;
+  }
 
-		_createClass(Chat, [{
-				key: 'componentWillMount',
-				value: function componentWillMount() {
-						var _this2 = this;
+  _createClass(Chat, [{
+    key: 'componentWillMount',
+    value: function componentWillMount() {
+      var _this2 = this;
 
-						_ChatStore2.default.on('change', function () {
-								_this2.setState({
-										convos: _ChatStore2.default.getConvos(),
-										input: "",
-										currentConvo: ""
-								});
-						});
-				}
-		}, {
-				key: 'convoTrigger',
-				value: function convoTrigger() {
-						ChatActions.getConvos();
-						console.log(this.state);
-				}
-		}, {
-				key: 'handleChange',
-				value: function handleChange(e) {
-						this.setState({ input: e.target.value });
-				}
-		}, {
-				key: 'onSubmit',
-				value: function onSubmit(e) {
-						e.preventDefault();
-						var inputText = this.refs.form.value;
-						ChatActions.addMessageToConversation(this.state.currentConvo._id, this.props.user._id, inputText);
-						this.refs.form.value = "";
-						this.setState({ input: "" });
-				}
-		}, {
-				key: 'onMatchClick',
-				value: function onMatchClick(match, e) {
-						this.setState({ currentConvo: match });
-				}
-		}, {
-				key: 'render',
-				value: function render() {
-						var _this3 = this;
+      this.socket = (0, _socket2.default)();
+      this.socket.on('updateMessages', this.updateMessages);
+      _ChatStore2.default.on('change', function () {
+        _this2.setState({
+          convos: _ChatStore2.default.getConvos(),
+          input: "",
+          currentConvo: []
+        });
+      });
+    }
+  }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var _this3 = this;
 
-						var currentUserId = this.props.user._id;
-						var convos = this.state.convos;
-						var convosList = convos.map(function (match, i) {
-								var boundMatchClick = _this3.onMatchClick.bind(_this3, match);
-								return _react2.default.createElement(
-										'div',
-										{ className: 'matches', key: i, onClick: boundMatchClick, ref: match._id },
-										_react2.default.createElement(
-												'h2',
-												{ key: i, ref: match._id },
-												currentUserId == match.user1 ? match.maleFn : match.femaleFn
-										)
-								);
-						});
-						var buttonColor = !this.state.input ? { color: "grey" } : { color: "black" };
-						return _react2.default.createElement(
-								'div',
-								{ className: 'container' },
-								_react2.default.createElement(_Nav2.default, null),
-								_react2.default.createElement(
-										'div',
-										{ id: 'chat-container' },
-										_react2.default.createElement(
-												'div',
-												{ id: 'matched-container' },
-												convosList
-										),
-										_react2.default.createElement(
-												'div',
-												{ id: 'message-container' },
-												_react2.default.createElement('div', { className: 'messages' }),
-												_react2.default.createElement(
-														'form',
-														{ id: 'text-form', onSubmit: this.onSubmit },
-														_react2.default.createElement('input', { type: 'text', className: 'text-field', ref: 'form', value: this.state.input, onChange: this.handleChange }),
-														_react2.default.createElement('input', { type: 'submit', value: 'Send', className: 'submit-button', disabled: !this.state.input, style: buttonColor })
-												)
-										)
-								)
-						);
-				}
-		}]);
+      setTimeout(function () {
+        var convos = _this3.state.convos;
+        console.log(_this3.state.convos, "before loop");
+        _this3.socket.emit('subscribe', _this3.props.user._id);
+        for (var i = 0; i < convos.length; i++) {
+          var convoId = convos[i]._id;
+          _this3.setState({ convoId: false });
+          _this3.socket.emit('subscribe', convos[i]._id);
+        }
+      }, 100);
+    }
+  }, {
+    key: 'handleChange',
+    value: function handleChange(e) {
+      this.setState({ input: e.target.value });
+    }
+  }, {
+    key: 'onSubmit',
+    value: function onSubmit(e) {
+      console.log(this.state);
+      e.preventDefault();
+      var inputText = this.refs.form.value;
+      this.socket.emit('newMessage', { text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id });
+      this.refs.form.value = "";
+      this.setState({ input: "" });
+    }
+  }, {
+    key: 'updateMessages',
+    value: function updateMessages(payload) {
+      console.log(this.state.currentConvo, "current convo");
+      console.log(this.payload, "payload");
+      if (this.state.currentConvo._id == payload._id) {
+        this.setState({
+          currentConvo: payload
+        });
+      } else {
+        var matchId = payload._id;
+        this.setState({
+          matchId: true
+        });
+      }
+    }
+  }, {
+    key: 'onMatchClick',
+    value: function onMatchClick(match, e) {
+      console.log(match);
+      this.setState({ currentConvo: match });
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this4 = this;
 
-		return Chat;
+      var currentUserId = this.props.user._id;
+      var convos = this.state.convos;
+      var convosList = convos.map(function (match, i) {
+        var boundMatchClick = _this4.onMatchClick.bind(_this4, match);
+        var matchId = match._id;
+        return _react2.default.createElement(
+          'div',
+          { className: 'matches', key: i, onClick: boundMatchClick, ref: match._id },
+          _react2.default.createElement('div', { className: _this4.state.matchId ? "new-message" : "notification" }),
+          _react2.default.createElement(
+            'h2',
+            { key: i, ref: match._id },
+            currentUserId == match.user1 ? match.maleFn : match.femaleFn
+          )
+        );
+      });
+
+      var messageList = this.state.currentConvo.messages ? this.state.currentConvo.messages.map(function (message, i) {
+        return _react2.default.createElement(
+          'div',
+          { className: message.user == _this4.props.user._id ? "my-messages" : "other-messages", key: i },
+          _react2.default.createElement(
+            'h4',
+            null,
+            message.text
+          ),
+          _react2.default.createElement(
+            'p',
+            null,
+            message.dateCreated
+          )
+        );
+      }) : null;
+      var buttonColor = !this.state.input ? { color: "grey" } : { color: "black" };
+      return _react2.default.createElement(
+        'div',
+        { className: 'container' },
+        _react2.default.createElement(_Nav2.default, null),
+        _react2.default.createElement(
+          'div',
+          { id: 'chat-container' },
+          _react2.default.createElement(
+            'div',
+            { id: 'matched-container' },
+            convosList
+          ),
+          _react2.default.createElement(
+            'div',
+            { id: 'message-container' },
+            _react2.default.createElement(
+              'form',
+              { id: 'text-form', onSubmit: this.onSubmit },
+              _react2.default.createElement('input', { type: 'text', className: 'text-field', ref: 'form', value: this.state.input, onChange: this.handleChange }),
+              _react2.default.createElement('input', { type: 'submit', value: 'Send', className: 'submit-button', disabled: !this.state.input, style: buttonColor })
+            ),
+            _react2.default.createElement(
+              'div',
+              { className: 'messages' },
+              messageList
+            )
+          )
+        )
+      );
+    }
+  }]);
+
+  return Chat;
 }(_react2.default.Component);
 // <h1 onClick={this.convoTrigger}>"Hello World"</h1>
 // 	<Display if={this.state.grabbed}>
@@ -1596,7 +1655,7 @@ var ChatStore = function (_EventEmitter) {
 
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatStore).call(this));
 
-    _this.convos = [];
+    _this.convos = [], _this.currentConvo = {};
     return _this;
   }
 
@@ -1604,13 +1663,23 @@ var ChatStore = function (_EventEmitter) {
     key: 'allConvos',
     value: function allConvos(convos) {
       this.convos = convos;
-      this.emit('change');
+      this.emit("change");
     }
   }, {
     key: 'getConvos',
     value: function getConvos() {
       return this.convos;
     }
+
+    // addToConvo(currentConvo) {
+    //   this.curentConvo = currentConvo
+    //   this.emit("newMessage")
+    // }
+
+    // getMessages() {
+    //   return this.currentConvo
+    // }
+
   }, {
     key: 'handleActions',
     value: function handleActions(action) {
@@ -1619,6 +1688,9 @@ var ChatStore = function (_EventEmitter) {
           {
             this.allConvos(action.convos);
           }
+        // case "ADD_TO_CURRENT_CONVO": {
+        //   this.addToConvo(action.currentConvo)
+        // }
       }
     }
   }]);
