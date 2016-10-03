@@ -7375,6 +7375,12 @@ img.mfp-img {
 .matches h2 {
   display: inline;
 }
+.active {
+  background: #13ABD2;
+}
+.active h2 {
+  color: white;
+}
 .notification,
 .new-message {
   height: 8px;
@@ -7390,10 +7396,36 @@ img.mfp-img {
   background-color: #007AFF;
 }
 .my-messages {
-  border: 1px solid blue;
+  text-align: right;
 }
-.other-messages {
-  border: 1px solid pink;
+.my-messages .text-messages,
+.other-messages .text-messages {
+  display: inline-block;
+  padding: 6px;
+  border-radius: 15px;
+  margin-bottom: 0;
+  font-size: 14px;
+  max-width: 40%;
+  word-wrap: break-word;
+}
+.my-messages .text-messages {
+  background-color: #178EFE;
+  color: white;
+  margin-right: 5px;
+  text-align: right;
+}
+.other-messages .text-messages {
+  margin-left: 5px;
+  background-color: lightgrey;
+}
+.my-messages .timestamps {
+  font-size: 10px;
+  margin-right: 5px;
+  text-align: right;
+}
+.other-messages .timestamps {
+  font-size: 10px;
+  margin-left: 11px;
 }
 @media (max-width: 588px) {
   #site-header {

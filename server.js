@@ -131,6 +131,32 @@ app.get('/api/get-convos', function(req, res, next) {
     }
 });
 
+app.get('/api/get-last-convo', function(req, res, next){
+  User.findById(req.session.user._id, function(err, user) {
+    if (err) return next(err);
+      console.log(err)
+      console.log(user, "just the user")
+      console.log(user.conversations, "user conversations")
+      console.log(user.conversations[0]._id, "id of first")
+
+    if (user.lastConvo) {
+      Conversation.findById(user.lastConvo, function(err2, convo) {
+        if (err2) return next(err2);
+        console.log(err2)
+        res.send({lastConvo: user.lastConvo, currentConvo: convo})
+      })
+    } else if (user.conversations.length === 0){
+      res.send({lastConvo: "", currentConvo: ""})
+    } else {
+      Conversation.findById(user.conversations[0], function(err2, convo) {
+        if (err2) return next(err2);
+        console.log(err2)
+        res.send({lastConvo: convo._id, currentConvo: convo})
+      })
+    }
+  });
+})
+
 app.put('/api/amtc', function(req, res, next) {
   console.log(req.body, "req check from server")
   var id = req.body.convoId
@@ -356,6 +382,15 @@ socket.on('likeToo', function(payload){
 });
 
   this.broadcast.to('/#'+ payload.peerSocket).emit('newMatch', {})
+})
+
+socket.on('setLastConvo', function(payload){
+  User.findById(payload.userId, function(err, user) {
+    if (err) return next(err);
+      console.log(err)
+    user.lastConvo = payload.lastConvo
+    user.save()
+  });
 })
 
 socket.on('subscribe', function(room) { 

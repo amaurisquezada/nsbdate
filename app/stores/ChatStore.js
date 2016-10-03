@@ -5,6 +5,7 @@ class ChatStore extends EventEmitter {
   constructor() {
     super()
     this.convos = [],
+    this.lastConvo = '',
     this.currentConvo = {}
 }
 
@@ -17,14 +18,21 @@ class ChatStore extends EventEmitter {
     return this.convos
   }
 
-  // addToConvo(currentConvo) {
-  //   this.curentConvo = currentConvo
-  //   this.emit("newMessage")
-  // }
+  updateLastConvo(convo) {
+    if (convo){
+      this.lastConvo = convo.lastConvo
+      this.currentConvo = convo.currentConvo
+      this.emit("lastConvoChange")
+    }
+  }
 
-  // getMessages() {
-  //   return this.currentConvo
-  // }
+  getLastConvo() {
+    return this.lastConvo
+  }
+
+  getCurrentConvo() {
+    return this.currentConvo
+  }
 
   
   handleActions(action) {
@@ -32,9 +40,9 @@ class ChatStore extends EventEmitter {
       case "USER_CONVOS": {
         this.allConvos(action.convos)
       }
-      // case "ADD_TO_CURRENT_CONVO": {
-      //   this.addToConvo(action.currentConvo)
-      // }
+      case "LAST_CONVO": {
+        this.updateLastConvo(action.convo)
+      }
     }
   }
 

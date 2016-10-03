@@ -145,7 +145,7 @@ export default class Video extends React.Component {
 	}
 
 	noEligibleUsers() {
-		console.log("no more users bro!")
+		console.log("no more eligible users")
 	}
 
 	closeEvent() {
@@ -161,7 +161,7 @@ export default class Video extends React.Component {
 		this.setState({peerSocket: payload})
 	}
 	newMatch(){
-		alert("SHE LIKES MEEEEEE")
+		alert("Successful Match")
 	}
 
 	onCall(call) {

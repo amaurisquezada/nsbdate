@@ -1,4 +1,6 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
+import moment from 'moment'
 import io from 'socket.io-client'
 import Display from './Display'
 import Nav1 from './Nav1'
@@ -16,18 +18,25 @@ export default class Chat extends React.Component {
 		this.state = {
       convos: ChatStore.getConvos(),
       input: "",
-      currentConvo: []
+      currentConvo: ChatStore.getCurrentConvo(),
+      lastConvo: ChatStore.getLastConvo()
     }
 	}
 
 	componentWillMount() {
 		this.socket = io()
+		console.log(this.state, "from compnent will mount")
 		this.socket.on('updateMessages', this.updateMessages)
     ChatStore.on('change', () => {
       this.setState({
         convos: ChatStore.getConvos(),
         input: "",
-        currentConvo: []
+      })
+    })
+    ChatStore.on('lastConvoChange', () => {
+      this.setState({
+        lastConvo: ChatStore.getLastConvo(),
+        currentConvo: ChatStore.getCurrentConvo(),
       })
     })
   }
@@ -37,12 +46,26 @@ export default class Chat extends React.Component {
 	  	const convos = this.state.convos
 	  	console.log(this.state.convos, "before loop")
 	  	this.socket.emit('subscribe', this.props.user._id)
+	  	var newState = {}
 	  	for (var i = 0; i < convos.length; i++) {
 	  		var convoId = convos[i]._id
-	  		this.setState({convoId:false})
+	  		newState[convoId] = false
 	  		this.socket.emit('subscribe', convos[i]._id)
 	  	}
+	  	this.setState(newState)
   	}, 100);
+  }
+
+  componentWillUpdate() {
+  	const node = ReactDOM.findDOMNode(this.refs.chatDiv)
+  	this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+  }
+
+  componentDidUpdate() {
+	  	if (this.shouldScrollBottom) {
+	    const node = ReactDOM.findDOMNode(this.refs.chatDiv)
+	    node.scrollTop = node.scrollHeight
+	  }
   }
 
   handleChange(e) {
@@ -59,8 +82,6 @@ export default class Chat extends React.Component {
   } 
 
   updateMessages(payload) {
-  	console.log(this.state.currentConvo, "current convo")
-  	console.log(this.payload, "payload")
   	if (this.state.currentConvo._id == payload._id) {
 			this.setState({
 				currentConvo: payload
@@ -74,8 +95,8 @@ export default class Chat extends React.Component {
   }
 
   onMatchClick(match, e) {
-  	console.log(match)
-  	this.setState({currentConvo: match})
+  	this.setState({currentConvo: match, lastConvo: match._id})
+  	this.socket.emit("setLastConvo", {userId: this.props.user._id, lastConvo: match._id})
   }
 
 	render(){
@@ -84,16 +105,28 @@ export default class Chat extends React.Component {
     const convosList = convos.map((match, i) => {
     								let boundMatchClick = this.onMatchClick.bind(this, match);
     								let matchId = match._id
-                    return <div className="matches" key={i} onClick={boundMatchClick} ref={match._id}>
-                    					<div className={this.state.matchId ? "new-message" : "notification"}></div>
+    								const divClass = this.state.lastConvo == matchId ? "matches active" : "matches regular"
+                    return <div className={divClass} key={i} onClick={boundMatchClick} ref={match._id}>
+                    					<div className={this.state[matchId] ? "new-message" : "notification"}></div>
                     					<h2 key={i} ref={match._id}>{currentUserId == match.user1 ? match.maleFn : match.femaleFn}</h2>
                     				</div>;
                   })
 
     const messageList = this.state.currentConvo.messages ? this.state.currentConvo.messages.map((message, i) =>{
+    	let timeDisplay;
+    	if (moment().diff(message.dateCreated, 'days') < 1){
+    		timeDisplay = moment(message.dateCreated).format("h:mm a")
+    	} else if (moment().diff(message.dateCreated, 'days') == 1) {
+    		timeDisplay = moment(message.dateCreated).format("[Yesterday at] h:mm a")
+    	} else if (moment().diff(message.dateCreated, 'days') < 7) {
+    		timeDisplay = moment(message.dateCreated).format("dddd [at] h:mm a")
+    	} else {
+    		timeDisplay = moment(message.dateCreated).format("MM/DD/YYYY [at] h:mm a")
+    	}
+
     	return <div className={message.user == this.props.user._id ? "my-messages" : "other-messages"} key={i}>
-    					<h4>{message.text}</h4>
-    					<p>{message.dateCreated}</p>
+    					<p className="text-messages">{message.text}</p>
+    					<p className="timestamps">{timeDisplay}</p>
     				 </div>
     }) : null
     const buttonColor = !this.state.input ? {color : "grey"} : {color : "black"}
@@ -111,7 +144,7 @@ export default class Chat extends React.Component {
 											<input type="submit" value="Send" className="submit-button" disabled={!this.state.input} style={buttonColor}>
 											</input>
 										</form>
-										<div className="messages">
+										<div className="messages" ref="chatDiv">
 											{messageList}
 										</div>
 									</div>

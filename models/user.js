@@ -39,6 +39,7 @@ var userSchema = new Schema({
   rejects: [String],
   likes: [String],
   conversations: [ {type : mongoose.Schema.ObjectId, ref : 'Convo'} ],
+  lastConvo: String,
   facebook: {}
 });
 

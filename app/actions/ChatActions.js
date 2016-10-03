@@ -10,6 +10,16 @@ export function getConvos() {
       })
 }
 
+export function getLastConvo() {
+    $.ajax({ url: '/api/get-last-convo'})
+      .done((data) => {
+        dispatcher.dispatch({
+         type: "LAST_CONVO",
+         convo: data
+         })
+      })
+}
+
 // export function addMessageToConversation(convoId, authorId, text) {
 //   $.ajax({
 //     type: 'PUT',
