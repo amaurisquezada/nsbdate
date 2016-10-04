@@ -389,7 +389,9 @@ var Chat = function (_React$Component) {
       convos: _ChatStore2.default.getConvos(),
       input: "",
       currentConvo: _ChatStore2.default.getCurrentConvo(),
-      lastConvo: _ChatStore2.default.getLastConvo()
+      lastConvo: _ChatStore2.default.getLastConvo(),
+      lastClicked: _ChatStore2.default.getLastClicked(),
+      convoStatuses: {}
     };
     return _this;
   }
@@ -400,7 +402,6 @@ var Chat = function (_React$Component) {
       var _this2 = this;
 
       this.socket = (0, _socket2.default)();
-      console.log(this.state, "from compnent will mount");
       this.socket.on('updateMessages', this.updateMessages);
       _ChatStore2.default.on('change', function () {
         _this2.setState({
@@ -411,7 +412,8 @@ var Chat = function (_React$Component) {
       _ChatStore2.default.on('lastConvoChange', function () {
         _this2.setState({
           lastConvo: _ChatStore2.default.getLastConvo(),
-          currentConvo: _ChatStore2.default.getCurrentConvo()
+          currentConvo: _ChatStore2.default.getCurrentConvo(),
+          lastClicked: _ChatStore2.default.getLastClicked()
         });
       });
     }
@@ -420,9 +422,8 @@ var Chat = function (_React$Component) {
     value: function componentDidMount() {
       var _this3 = this;
 
-      setTimeout(function () {
+      this.timer1 = setTimeout(function () {
         var convos = _this3.state.convos;
-        console.log(_this3.state.convos, "before loop");
         _this3.socket.emit('subscribe', _this3.props.user._id);
         var newState = {};
         for (var i = 0; i < convos.length; i++) {
@@ -430,8 +431,15 @@ var Chat = function (_React$Component) {
           newState[convoId] = false;
           _this3.socket.emit('subscribe', convos[i]._id);
         }
-        _this3.setState(newState);
+        _this3.setState({ convoStatuses: newState });
       }, 100);
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      this.socket.close();
+      clearTimeout(this.timer1);
+      _ChatStore2.default.removeAllListeners();
     }
   }, {
     key: 'componentWillUpdate',
@@ -471,16 +479,23 @@ var Chat = function (_React$Component) {
         });
       } else {
         var matchId = payload._id;
-        this.setState({
-          matchId: true
-        });
+        var convosState = this.state.convoStatuses;
+        convosState[matchId] = true;
+        this.setState({ convoStatuses: convosState });
       }
     }
   }, {
     key: 'onMatchClick',
     value: function onMatchClick(match, e) {
-      this.setState({ currentConvo: match, lastConvo: match._id });
-      this.socket.emit("setLastConvo", { userId: this.props.user._id, lastConvo: match._id });
+      var update = {};
+      update.currentConvo = match;
+      update.currentConvo.lastClicked = {};
+      update.currentConvo.lastClicked[this.props.user._id] = Date.now();
+      update.lastConvo = match._id;
+      update.convoStatuses = this.state.convoStatuses;
+      update.convoStatuses[match._id] = false;
+      this.setState(update);
+      this.socket.emit("setLastConvo", { userId: this.props.user._id, lastConvo: { _id: match._id, lastClicked: Date.now() } });
     }
   }, {
     key: 'render',
@@ -496,7 +511,7 @@ var Chat = function (_React$Component) {
         return _react2.default.createElement(
           'div',
           { className: divClass, key: i, onClick: boundMatchClick, ref: match._id },
-          _react2.default.createElement('div', { className: _this4.state[matchId] ? "new-message" : "notification" }),
+          _react2.default.createElement('div', { className: _this4.state.convoStatuses[matchId] ? "new-message" : "notification" }),
           _react2.default.createElement(
             'h2',
             { key: i, ref: match._id },
@@ -1267,6 +1282,8 @@ var Video = function (_React$Component) {
 		key: 'componentWillUnmount',
 		value: function componentWillUnmount() {
 			this.peer.destroy();
+			this.socket.close();
+			_VideoStore2.default.removeListener('change', this.nextMatch);
 		}
 	}, {
 		key: 'step1',
@@ -1713,7 +1730,7 @@ var ChatStore = function (_EventEmitter) {
 
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatStore).call(this));
 
-    _this.convos = [], _this.lastConvo = '', _this.currentConvo = {};
+    _this.convos = [], _this.lastConvo = '', _this.lastClicked = '', _this.currentConvo = {};
     return _this;
   }
 
@@ -1733,6 +1750,7 @@ var ChatStore = function (_EventEmitter) {
     value: function updateLastConvo(convo) {
       if (convo) {
         this.lastConvo = convo.lastConvo;
+        this.lastClicked = convo.lastClicked;
         this.currentConvo = convo.currentConvo;
         this.emit("lastConvoChange");
       }
@@ -1746,6 +1764,11 @@ var ChatStore = function (_EventEmitter) {
     key: 'getCurrentConvo',
     value: function getCurrentConvo() {
       return this.currentConvo;
+    }
+  }, {
+    key: 'getLastClicked',
+    value: function getLastClicked() {
+      return this.lastClicked;
     }
   }, {
     key: 'handleActions',

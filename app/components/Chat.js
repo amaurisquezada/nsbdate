@@ -19,13 +19,14 @@ export default class Chat extends React.Component {
       convos: ChatStore.getConvos(),
       input: "",
       currentConvo: ChatStore.getCurrentConvo(),
-      lastConvo: ChatStore.getLastConvo()
+      lastConvo: ChatStore.getLastConvo(),
+      lastClicked: ChatStore.getLastClicked(),
+      convoStatuses: {}
     }
 	}
 
 	componentWillMount() {
 		this.socket = io()
-		console.log(this.state, "from compnent will mount")
 		this.socket.on('updateMessages', this.updateMessages)
     ChatStore.on('change', () => {
       this.setState({
@@ -37,14 +38,15 @@ export default class Chat extends React.Component {
       this.setState({
         lastConvo: ChatStore.getLastConvo(),
         currentConvo: ChatStore.getCurrentConvo(),
+        lastClicked: ChatStore.getLastClicked()
       })
     })
   }
 
+
   componentDidMount() {
-  	setTimeout(() => {
+  	this.timer1 = setTimeout(() => {
 	  	const convos = this.state.convos
-	  	console.log(this.state.convos, "before loop")
 	  	this.socket.emit('subscribe', this.props.user._id)
 	  	var newState = {}
 	  	for (var i = 0; i < convos.length; i++) {
@@ -52,8 +54,14 @@ export default class Chat extends React.Component {
 	  		newState[convoId] = false
 	  		this.socket.emit('subscribe', convos[i]._id)
 	  	}
-	  	this.setState(newState)
+	  	this.setState({convoStatuses: newState})
   	}, 100);
+  }
+  
+  componentWillUnmount() {
+  	this.socket.close()
+  	clearTimeout(this.timer1)
+  	ChatStore.removeAllListeners()
   }
 
   componentWillUpdate() {
@@ -87,16 +95,23 @@ export default class Chat extends React.Component {
 				currentConvo: payload
 			})
   	} else {
-  		const matchId = payload._id
-  		this.setState({
-  			matchId: true
-  		})
+  		let matchId = payload._id
+  		let convosState = this.state.convoStatuses
+  		convosState[matchId] = true
+  		this.setState({convoStatuses: convosState})
   	}
   }
 
   onMatchClick(match, e) {
-  	this.setState({currentConvo: match, lastConvo: match._id})
-  	this.socket.emit("setLastConvo", {userId: this.props.user._id, lastConvo: match._id})
+  	let update = {}
+  	update.currentConvo = match
+  	update.currentConvo.lastClicked = {}
+  	update.currentConvo.lastClicked[this.props.user._id] = Date.now()
+  	update.lastConvo = match._id
+  	update.convoStatuses = this.state.convoStatuses
+  	update.convoStatuses[match._id] = false
+  	this.setState(update)
+  	this.socket.emit("setLastConvo", {userId: this.props.user._id, lastConvo: {_id: match._id, lastClicked: Date.now()}})
   }
 
 	render(){
@@ -107,7 +122,7 @@ export default class Chat extends React.Component {
     								let matchId = match._id
     								const divClass = this.state.lastConvo == matchId ? "matches active" : "matches regular"
                     return <div className={divClass} key={i} onClick={boundMatchClick} ref={match._id}>
-                    					<div className={this.state[matchId] ? "new-message" : "notification"}></div>
+                    					<div className={this.state.convoStatuses[matchId] ? "new-message" : "notification"}></div>
                     					<h2 key={i} ref={match._id}>{currentUserId == match.user1 ? match.maleFn : match.femaleFn}</h2>
                     				</div>;
                   })

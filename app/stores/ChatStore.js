@@ -6,6 +6,7 @@ class ChatStore extends EventEmitter {
     super()
     this.convos = [],
     this.lastConvo = '',
+    this.lastClicked = '',
     this.currentConvo = {}
 }
 
@@ -21,6 +22,7 @@ class ChatStore extends EventEmitter {
   updateLastConvo(convo) {
     if (convo){
       this.lastConvo = convo.lastConvo
+      this.lastClicked = convo.lastClicked
       this.currentConvo = convo.currentConvo
       this.emit("lastConvoChange")
     }
@@ -32,6 +34,10 @@ class ChatStore extends EventEmitter {
 
   getCurrentConvo() {
     return this.currentConvo
+  }
+
+  getLastClicked() {
+    return this.lastClicked
   }
 
   

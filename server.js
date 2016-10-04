@@ -137,21 +137,21 @@ app.get('/api/get-last-convo', function(req, res, next){
       console.log(err)
       console.log(user, "just the user")
       console.log(user.conversations, "user conversations")
-      console.log(user.conversations[0]._id, "id of first")
+      console.log(user.conversations[0], "id of first")
 
     if (user.lastConvo) {
-      Conversation.findById(user.lastConvo, function(err2, convo) {
+      Conversation.findById(user.lastConvo._id, function(err2, convo) {
         if (err2) return next(err2);
         console.log(err2)
-        res.send({lastConvo: user.lastConvo, currentConvo: convo})
+        res.send({lastConvo: user.lastConvo._id, lastClicked: user.lastConvo.lastClicked, currentConvo: convo})
       })
     } else if (user.conversations.length === 0){
-      res.send({lastConvo: "", currentConvo: ""})
+      res.send({lastConvo: "", lastClicked: "", currentConvo: ""})
     } else {
       Conversation.findById(user.conversations[0], function(err2, convo) {
         if (err2) return next(err2);
         console.log(err2)
-        res.send({lastConvo: convo._id, currentConvo: convo})
+        res.send({lastConvo: convo._id, lastClicked: Date.now(), currentConvo: convo})
       })
     }
   });
@@ -390,6 +390,14 @@ socket.on('setLastConvo', function(payload){
       console.log(err)
     user.lastConvo = payload.lastConvo
     user.save()
+  });
+  Conversation.findById(payload.lastConvo._id, function(err, convo) {
+    if (err) return next(err);
+      console.log(err)
+      console.log(convo, "before updating last click")
+    convo.lastClicked[payload.userId] = payload.lastConvo.lastClicked
+    console.log(convo, "after updating last click")
+    convo.save()
   });
 })
 

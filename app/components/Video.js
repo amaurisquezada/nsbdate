@@ -63,6 +63,8 @@ export default class Video extends React.Component {
 
 	componentWillUnmount() {
 		this.peer.destroy()
+		this.socket.close()
+		VideoStore.removeListener('change', this.nextMatch)
 	}
 
 	step1 () {
