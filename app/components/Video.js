@@ -209,7 +209,7 @@ export default class Video extends React.Component {
           chatLimit = setTimeout(() => {
         		window.existingCall.close();
         		alert("hey man!")
-        }, 25000)
+        }, 8000)
       });
       window.existingCall = call;
       call.on('close', () => {

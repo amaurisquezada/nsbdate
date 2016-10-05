@@ -118,6 +118,7 @@ app.get('/api/get-convos', function(req, res, next) {
           .find({'user2': req.session.user._id})
           .exec(function(err, convo) {
           if (err) return next(err);
+          console.log(convo, "should be maleeeeeeeeee")
           res.send(convo);
         });
     } else {
@@ -126,6 +127,7 @@ app.get('/api/get-convos', function(req, res, next) {
           .find({'user1': req.session.user._id})
           .exec(function(err, convo) {
           if (err) return next(err);
+          console.log(convo, "its female doeeeeeee")
           res.send(convo);
         });
     }
@@ -134,15 +136,10 @@ app.get('/api/get-convos', function(req, res, next) {
 app.get('/api/get-last-convo', function(req, res, next){
   User.findById(req.session.user._id, function(err, user) {
     if (err) return next(err);
-      console.log(err)
-      console.log(user, "just the user")
-      console.log(user.conversations, "user conversations")
-      console.log(user.conversations[0], "id of first")
 
-    if (user.lastConvo) {
+    if (!_.isEmpty(user.lastConvo)) {
       Conversation.findById(user.lastConvo._id, function(err2, convo) {
         if (err2) return next(err2);
-        console.log(err2)
         res.send({lastConvo: user.lastConvo._id, lastClicked: user.lastConvo.lastClicked, currentConvo: convo})
       })
     } else if (user.conversations.length === 0){
@@ -150,7 +147,6 @@ app.get('/api/get-last-convo', function(req, res, next){
     } else {
       Conversation.findById(user.conversations[0], function(err2, convo) {
         if (err2) return next(err2);
-        console.log(err2)
         res.send({lastConvo: convo._id, lastClicked: Date.now(), currentConvo: convo})
       })
     }
@@ -367,11 +363,17 @@ socket.on('likeToo', function(payload){
       return res.status(404).send({ message: 'User not found.' });
     }
     user2 = otherUser;
+    var lc = {};
+    var date = Date.now();
+    lc[user1._id] = date;
+    lc[user2._id] = date;
     var convo = new Conversation({
       user1: user1,
       femaleFn: user1.firstName,
       user2: user2,
-      maleFn: user2.firstName
+      maleFn: user2.firstName,
+      lastClicked : lc,
+      messages: []
     });
     convo.save();
     user.conversations.push(convo);
@@ -387,17 +389,14 @@ socket.on('likeToo', function(payload){
 socket.on('setLastConvo', function(payload){
   User.findById(payload.userId, function(err, user) {
     if (err) return next(err);
-      console.log(err)
     user.lastConvo = payload.lastConvo
     user.save()
   });
-  Conversation.findById(payload.lastConvo._id, function(err, convo) {
+  var lcString = 'lastClicked.' + payload.userId
+  var updatedAttr = {}
+  updatedAttr[lcString] = payload.lastConvo.lastClicked
+  Conversation.findByIdAndUpdate(payload.lastConvo._id, {$set: updatedAttr}, function(err, convo) {
     if (err) return next(err);
-      console.log(err)
-      console.log(convo, "before updating last click")
-    convo.lastClicked[payload.userId] = payload.lastConvo.lastClicked
-    console.log(convo, "after updating last click")
-    convo.save()
   });
 })
 

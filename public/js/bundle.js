@@ -423,12 +423,17 @@ var Chat = function (_React$Component) {
       var _this3 = this;
 
       this.timer1 = setTimeout(function () {
+        console.log(_this3.state.convos);
         var convos = _this3.state.convos;
+        var currentConvo = _this3.state.currentConvo;
         _this3.socket.emit('subscribe', _this3.props.user._id);
         var newState = {};
         for (var i = 0; i < convos.length; i++) {
-          var convoId = convos[i]._id;
-          newState[convoId] = false;
+          var convoId = convos[i]._id,
+              lastMessage = convos[i].messages[convos[i].messages.length - 1],
+              lastMessageDate = lastMessage ? (0, _moment2.default)(lastMessage.dateCreated).valueOf() : (0, _moment2.default)(convos[i].dateCreated).valueOf(),
+              lastConvoClick = convos[i].lastClicked[_this3.props.user._id];
+          newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false;
           _this3.socket.emit('subscribe', convos[i]._id);
         }
         _this3.setState({ convoStatuses: newState });
@@ -478,10 +483,17 @@ var Chat = function (_React$Component) {
           currentConvo: payload
         });
       } else {
+        ChatActions.getConvos();
         var matchId = payload._id;
+        // let convos = this.state.convos
+        // for (var i in convos) {
+        // 	if (convos[i]._id = matchId) {
+        // 		convos[i]._id = payload
+        // 	}
+        // }
         var convosState = this.state.convoStatuses;
         convosState[matchId] = true;
-        this.setState({ convoStatuses: convosState });
+        this.setState({ convoStatuses: convosState, convos: convos });
       }
     }
   }, {
@@ -520,7 +532,7 @@ var Chat = function (_React$Component) {
         );
       });
 
-      var messageList = this.state.currentConvo.messages ? this.state.currentConvo.messages.map(function (message, i) {
+      var messageList = this.state.currentConvo && this.state.currentConvo.messages ? this.state.currentConvo.messages.map(function (message, i) {
         var timeDisplay = void 0;
         if ((0, _moment2.default)().diff(message.dateCreated, 'days') < 1) {
           timeDisplay = (0, _moment2.default)(message.dateCreated).format("h:mm a");
@@ -547,7 +559,7 @@ var Chat = function (_React$Component) {
           )
         );
       }) : null;
-      var buttonColor = !this.state.input ? { color: "grey" } : { color: "black" };
+      var buttonColor = !this.state.input || !this.state.currentConvo ? { color: "grey" } : { color: "black" };
       return _react2.default.createElement(
         'div',
         { className: 'container' },
@@ -567,7 +579,7 @@ var Chat = function (_React$Component) {
               'form',
               { id: 'text-form', onSubmit: this.onSubmit },
               _react2.default.createElement('input', { type: 'text', className: 'text-field', ref: 'form', value: this.state.input, onChange: this.handleChange }),
-              _react2.default.createElement('input', { type: 'submit', value: 'Send', className: 'submit-button', disabled: !this.state.input, style: buttonColor })
+              _react2.default.createElement('input', { type: 'submit', value: 'Send', className: 'submit-button', disabled: !this.state.input || !this.state.currentConvo, style: buttonColor })
             ),
             _react2.default.createElement(
               'div',
@@ -1451,7 +1463,7 @@ var Video = function (_React$Component) {
 				chatLimit = setTimeout(function () {
 					window.existingCall.close();
 					alert("hey man!");
-				}, 25000);
+				}, 8000);
 			});
 			window.existingCall = call;
 			call.on('close', function () {

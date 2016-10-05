@@ -46,12 +46,17 @@ export default class Chat extends React.Component {
 
   componentDidMount() {
   	this.timer1 = setTimeout(() => {
+  		console.log(this.state.convos)
 	  	const convos = this.state.convos
+	  	const currentConvo = this.state.currentConvo
 	  	this.socket.emit('subscribe', this.props.user._id)
 	  	var newState = {}
 	  	for (var i = 0; i < convos.length; i++) {
-	  		var convoId = convos[i]._id
-	  		newState[convoId] = false
+	  		var convoId = convos[i]._id,
+	  		lastMessage = convos[i].messages[convos[i].messages.length - 1],
+	  		lastMessageDate = lastMessage ? moment(lastMessage.dateCreated).valueOf() : moment(convos[i].dateCreated).valueOf(),
+	  		lastConvoClick = convos[i].lastClicked[this.props.user._id];
+	  		newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false 
 	  		this.socket.emit('subscribe', convos[i]._id)
 	  	}
 	  	this.setState({convoStatuses: newState})
@@ -95,10 +100,17 @@ export default class Chat extends React.Component {
 				currentConvo: payload
 			})
   	} else {
+  		ChatActions.getConvos()
   		let matchId = payload._id
+  		// let convos = this.state.convos
+  		// for (var i in convos) {
+  		// 	if (convos[i]._id = matchId) {
+  		// 		convos[i]._id = payload
+  		// 	}
+  		// }
   		let convosState = this.state.convoStatuses
   		convosState[matchId] = true
-  		this.setState({convoStatuses: convosState})
+  		this.setState({convoStatuses: convosState, convos: convos})
   	}
   }
 
@@ -127,24 +139,24 @@ export default class Chat extends React.Component {
                     				</div>;
                   })
 
-    const messageList = this.state.currentConvo.messages ? this.state.currentConvo.messages.map((message, i) =>{
-    	let timeDisplay;
-    	if (moment().diff(message.dateCreated, 'days') < 1){
-    		timeDisplay = moment(message.dateCreated).format("h:mm a")
-    	} else if (moment().diff(message.dateCreated, 'days') == 1) {
-    		timeDisplay = moment(message.dateCreated).format("[Yesterday at] h:mm a")
-    	} else if (moment().diff(message.dateCreated, 'days') < 7) {
-    		timeDisplay = moment(message.dateCreated).format("dddd [at] h:mm a")
-    	} else {
-    		timeDisplay = moment(message.dateCreated).format("MM/DD/YYYY [at] h:mm a")
-    	}
+    const messageList = this.state.currentConvo && this.state.currentConvo.messages ? this.state.currentConvo.messages.map((message, i) =>{
+	    	let timeDisplay;
+	    	if (moment().diff(message.dateCreated, 'days') < 1){
+	    		timeDisplay = moment(message.dateCreated).format("h:mm a")
+	    	} else if (moment().diff(message.dateCreated, 'days') == 1) {
+	    		timeDisplay = moment(message.dateCreated).format("[Yesterday at] h:mm a")
+	    	} else if (moment().diff(message.dateCreated, 'days') < 7) {
+	    		timeDisplay = moment(message.dateCreated).format("dddd [at] h:mm a")
+	    	} else {
+	    		timeDisplay = moment(message.dateCreated).format("MM/DD/YYYY [at] h:mm a")
+	    	}
 
-    	return <div className={message.user == this.props.user._id ? "my-messages" : "other-messages"} key={i}>
-    					<p className="text-messages">{message.text}</p>
-    					<p className="timestamps">{timeDisplay}</p>
-    				 </div>
-    }) : null
-    const buttonColor = !this.state.input ? {color : "grey"} : {color : "black"}
+			    	return <div className={message.user == this.props.user._id ? "my-messages" : "other-messages"} key={i}>
+			    					<p className="text-messages">{message.text}</p>
+			    					<p className="timestamps">{timeDisplay}</p>
+			    				 </div>
+			    }) : null
+    const buttonColor = !this.state.input || !this.state.currentConvo ? {color : "grey"} : {color : "black"}
 		return (
 							<div className="container">
 								<Nav1/>
@@ -156,7 +168,7 @@ export default class Chat extends React.Component {
 										<form id="text-form" onSubmit={this.onSubmit}>
 											<input type="text" className="text-field" ref="form" value={this.state.input} onChange={this.handleChange}>
 											</input>
-											<input type="submit" value="Send" className="submit-button" disabled={!this.state.input} style={buttonColor}>
+											<input type="submit" value="Send" className="submit-button" disabled={!this.state.input || !this.state.currentConvo} style={buttonColor}>
 											</input>
 										</form>
 										<div className="messages" ref="chatDiv">
