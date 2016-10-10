@@ -15,6 +15,7 @@ export default class Chat extends React.Component {
 		this.handleChange = this.handleChange.bind(this)
 		this.onMatchClick = this.onMatchClick.bind(this)
 		this.updateMessages = this.updateMessages.bind(this)
+		this.updateCurrentConvo = this.updateCurrentConvo.bind(this)
 		this.state = {
       convos: ChatStore.getConvos(),
       input: "",
@@ -28,6 +29,7 @@ export default class Chat extends React.Component {
 	componentWillMount() {
 		this.socket = io()
 		this.socket.on('updateMessages', this.updateMessages)
+		this.socket.on('updatedConvo', this.updateCurrentConvo)
     ChatStore.on('change', () => {
       this.setState({
         convos: ChatStore.getConvos(),
@@ -51,11 +53,14 @@ export default class Chat extends React.Component {
 	  	const currentConvo = this.state.currentConvo
 	  	this.socket.emit('subscribe', this.props.user._id)
 	  	var newState = {}
-	  	for (var i = 0; i < convos.length; i++) {
+	  	for (var i in convos) {
 	  		var convoId = convos[i]._id,
 	  		lastMessage = convos[i].messages[convos[i].messages.length - 1],
 	  		lastMessageDate = lastMessage ? moment(lastMessage.dateCreated).valueOf() : moment(convos[i].dateCreated).valueOf(),
 	  		lastConvoClick = convos[i].lastClicked[this.props.user._id];
+	  		console.log(lastMessage, "last message")
+	  		console.log(lastMessageDate, "last message date")
+	  		console.log(lastConvoClick, "last convo click")
 	  		newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false 
 	  		this.socket.emit('subscribe', convos[i]._id)
 	  	}
@@ -99,26 +104,33 @@ export default class Chat extends React.Component {
 			this.setState({
 				currentConvo: payload
 			})
+			console.log(payload, "from updateMessages")
   	} else {
   		ChatActions.getConvos()
   		let matchId = payload._id
   		// let convos = this.state.convos
   		// for (var i in convos) {
-  		// 	if (convos[i]._id = matchId) {
+  		// 	if (convos[i]._id == matchId) {
   		// 		convos[i]._id = payload
   		// 	}
   		// }
   		let convosState = this.state.convoStatuses
   		convosState[matchId] = true
-  		this.setState({convoStatuses: convosState, convos: convos})
+  		this.setState({convoStatuses: convosState})
   	}
   }
 
+  updateCurrentConvo(payload) {
+  	this.setState({currentConvo: payload})
+  }
+
+
+
   onMatchClick(match, e) {
   	let update = {}
-  	update.currentConvo = match
-  	update.currentConvo.lastClicked = {}
-  	update.currentConvo.lastClicked[this.props.user._id] = Date.now()
+  	// update.currentConvo = match
+  	// update.currentConvo.lastClicked = {}
+  	// update.currentConvo.lastClicked[this.props.user._id] = Date.now()
   	update.lastConvo = match._id
   	update.convoStatuses = this.state.convoStatuses
   	update.convoStatuses[match._id] = false

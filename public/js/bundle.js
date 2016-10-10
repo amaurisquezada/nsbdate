@@ -385,6 +385,7 @@ var Chat = function (_React$Component) {
     _this.handleChange = _this.handleChange.bind(_this);
     _this.onMatchClick = _this.onMatchClick.bind(_this);
     _this.updateMessages = _this.updateMessages.bind(_this);
+    _this.updateCurrentConvo = _this.updateCurrentConvo.bind(_this);
     _this.state = {
       convos: _ChatStore2.default.getConvos(),
       input: "",
@@ -403,6 +404,7 @@ var Chat = function (_React$Component) {
 
       this.socket = (0, _socket2.default)();
       this.socket.on('updateMessages', this.updateMessages);
+      this.socket.on('updatedConvo', this.updateCurrentConvo);
       _ChatStore2.default.on('change', function () {
         _this2.setState({
           convos: _ChatStore2.default.getConvos(),
@@ -428,11 +430,14 @@ var Chat = function (_React$Component) {
         var currentConvo = _this3.state.currentConvo;
         _this3.socket.emit('subscribe', _this3.props.user._id);
         var newState = {};
-        for (var i = 0; i < convos.length; i++) {
+        for (var i in convos) {
           var convoId = convos[i]._id,
               lastMessage = convos[i].messages[convos[i].messages.length - 1],
               lastMessageDate = lastMessage ? (0, _moment2.default)(lastMessage.dateCreated).valueOf() : (0, _moment2.default)(convos[i].dateCreated).valueOf(),
               lastConvoClick = convos[i].lastClicked[_this3.props.user._id];
+          console.log(lastMessage, "last message");
+          console.log(lastMessageDate, "last message date");
+          console.log(lastConvoClick, "last convo click");
           newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false;
           _this3.socket.emit('subscribe', convos[i]._id);
         }
@@ -482,27 +487,33 @@ var Chat = function (_React$Component) {
         this.setState({
           currentConvo: payload
         });
+        console.log(payload, "from updateMessages");
       } else {
         ChatActions.getConvos();
         var matchId = payload._id;
         // let convos = this.state.convos
         // for (var i in convos) {
-        // 	if (convos[i]._id = matchId) {
+        // 	if (convos[i]._id == matchId) {
         // 		convos[i]._id = payload
         // 	}
         // }
         var convosState = this.state.convoStatuses;
         convosState[matchId] = true;
-        this.setState({ convoStatuses: convosState, convos: convos });
+        this.setState({ convoStatuses: convosState });
       }
+    }
+  }, {
+    key: 'updateCurrentConvo',
+    value: function updateCurrentConvo(payload) {
+      this.setState({ currentConvo: payload });
     }
   }, {
     key: 'onMatchClick',
     value: function onMatchClick(match, e) {
       var update = {};
-      update.currentConvo = match;
-      update.currentConvo.lastClicked = {};
-      update.currentConvo.lastClicked[this.props.user._id] = Date.now();
+      // update.currentConvo = match
+      // update.currentConvo.lastClicked = {}
+      // update.currentConvo.lastClicked[this.props.user._id] = Date.now()
       update.lastConvo = match._id;
       update.convoStatuses = this.state.convoStatuses;
       update.convoStatuses[match._id] = false;
@@ -1421,7 +1432,6 @@ var Video = function (_React$Component) {
 		value: function onCall(call) {
 			var _this4 = this;
 
-			console.log(call.metadata.peerSocket, 'from call listener');
 			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
 			cam.then(function (mediaStream) {
 				_this4.setState({ peerSocket: call.metadata.peerSocket, mySource: URL.createObjectURL(mediaStream), peerCuid: call.metadata.peerCuid });
@@ -1452,17 +1462,15 @@ var Video = function (_React$Component) {
 			var _this5 = this;
 
 			var chatLimit;
-			// this.socket.emit('dust')
 			call.on('stream', function (stream) {
 				if (_this5.props.user.gender === "Female") {
 					_this5.socket.emit('sendSocket', { destination: _this5.state.peerSocket, socketId: _this5.socket.id });
 				}
-				console.log("in the stream");
 				_this5.setState({ otherSource: URL.createObjectURL(stream) });
 				_this5.buttonHandler();
 				chatLimit = setTimeout(function () {
 					window.existingCall.close();
-					alert("hey man!");
+					alert("Conversation has ended");
 				}, 8000);
 			});
 			window.existingCall = call;

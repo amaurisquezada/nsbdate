@@ -167,8 +167,6 @@ export default class Video extends React.Component {
 	}
 
 	onCall(call) {
-
-		console.log(call.metadata.peerSocket, 'from call listener')
 		const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
       	cam.then( (mediaStream) => {
         this.setState({peerSocket: call.metadata.peerSocket, mySource: URL.createObjectURL(mediaStream), peerCuid: call.metadata.peerCuid})
@@ -198,17 +196,15 @@ export default class Video extends React.Component {
 
 	step3 (call) {
 			var chatLimit;
-			// this.socket.emit('dust')
       call.on('stream', stream => {
       	if (this.props.user.gender === "Female") {
       		this.socket.emit('sendSocket', {destination: this.state.peerSocket, socketId: this.socket.id})
       	}
-      	console.log("in the stream")
         this.setState({otherSource: URL.createObjectURL(stream)})
         this.buttonHandler()
           chatLimit = setTimeout(() => {
         		window.existingCall.close();
-        		alert("hey man!")
+        		alert("Conversation has ended")
         }, 8000)
       });
       window.existingCall = call;

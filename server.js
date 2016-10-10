@@ -118,7 +118,6 @@ app.get('/api/get-convos', function(req, res, next) {
           .find({'user2': req.session.user._id})
           .exec(function(err, convo) {
           if (err) return next(err);
-          console.log(convo, "should be maleeeeeeeeee")
           res.send(convo);
         });
     } else {
@@ -127,7 +126,6 @@ app.get('/api/get-convos', function(req, res, next) {
           .find({'user1': req.session.user._id})
           .exec(function(err, convo) {
           if (err) return next(err);
-          console.log(convo, "its female doeeeeeee")
           res.send(convo);
         });
     }
@@ -154,7 +152,6 @@ app.get('/api/get-last-convo', function(req, res, next){
 })
 
 app.put('/api/amtc', function(req, res, next) {
-  console.log(req.body, "req check from server")
   var id = req.body.convoId
   Conversation.findById(id, function(err, convo) {
     if (err) return next(err);
@@ -177,7 +174,6 @@ app.put('/api/amtc', function(req, res, next) {
 
 
 app.get('/api/currentUser', function(req, res, next) {
-	console.log(req._parsedOriginalUrl.query)
 	User
 			.findOne({'firstName': req._parsedOriginalUrl.query})
 			.exec(function(err, user) {
@@ -192,9 +188,7 @@ app.get('/api/currentUser', function(req, res, next) {
 
 
 app.post('/api/signout', function(req, res){
-  console.log(req.session, "before logout")
   req.logout()
-  console.log(req.session, "after logout")
   res.redirect('/')
 })
 
@@ -287,9 +281,7 @@ socket.on('disconnect', function(){
 })
 
 socket.on('addToWsm', function(payload){
-  console.log(payload)
   womenSeekingMen.push(payload)
-  console.log(womenSeekingMen, "from server side socket")
   // this.broadcast.emit('step1', payload)
 })
 
@@ -301,23 +293,16 @@ socket.on('fetchFromWsm', function(payload){
     if (!user) {
       console.log('User not found.');
     }
-    console.log(womenSeekingMen, "before splice")
     var chatHistory = user.previousChats
     var eligible = _.filter(womenSeekingMen, function(pm){ return !_.contains(chatHistory, pm.peerCuid)})[0]
-    console.log(eligible, 'eligible from fetch')
     if (eligible) {
       var selection = womenSeekingMen.splice(womenSeekingMen.indexOf(eligible), 1)[0]
-      console.log(womenSeekingMen, "after splice")
       self.emit('idRetrieval', selection)  
     } else {
       self.emit('noEligibleUsers')
     }
   })
 })
-
-// socket.on('dust', function() {
-//   this.join('amauris')
-// })
 
 socket.on('rejected', function(payload) {
   this.broadcast.to('/#' + payload).emit('closeEvent')
@@ -365,15 +350,16 @@ socket.on('likeToo', function(payload){
     user2 = otherUser;
     var lc = {};
     var date = Date.now();
-    lc[user1._id] = date;
-    lc[user2._id] = date;
+    lc[user1._id] = date - 10;
+    lc[user2._id] = date - 10;
     var convo = new Conversation({
       user1: user1,
       femaleFn: user1.firstName,
       user2: user2,
       maleFn: user2.firstName,
       lastClicked : lc,
-      messages: []
+      messages: [],
+      dateCreated: date
     });
     convo.save();
     user.conversations.push(convo);
@@ -387,6 +373,7 @@ socket.on('likeToo', function(payload){
 })
 
 socket.on('setLastConvo', function(payload){
+  var _this = this
   User.findById(payload.userId, function(err, user) {
     if (err) return next(err);
     user.lastConvo = payload.lastConvo
@@ -395,8 +382,9 @@ socket.on('setLastConvo', function(payload){
   var lcString = 'lastClicked.' + payload.userId
   var updatedAttr = {}
   updatedAttr[lcString] = payload.lastConvo.lastClicked
-  Conversation.findByIdAndUpdate(payload.lastConvo._id, {$set: updatedAttr}, function(err, convo) {
+  Conversation.findByIdAndUpdate(payload.lastConvo._id, {$set: updatedAttr}, {new: true}, function(err, convo) {
     if (err) return next(err);
+    _this.emit('updatedConvo', convo)
   });
 })
 
@@ -414,8 +402,10 @@ socket.on('newMessage', function(payload){
       user: payload.authorId
     });
     message.save()
+    console.log(convo, "before push")
     convo.messages.push(message)
     convo.save()
+    console.log(convo, "after push")
     io.to(payload.convoId).emit('updateMessages', convo)
   });
 })
@@ -439,164 +429,7 @@ app.use(function(req, res) {
       var page = swig.renderFile('views/index.html', { html: html });
       res.status(200).send(page);
     } else {
-      res.status(404).send('MOWDEEEE')
+      res.status(404).send('Page Not Found')
     }
   });
 });
-
-/**
- * GET /api/characters/shame
- * Returns 100 lowest ranked characters.
- */
-// app.get('/api/characters/shame', function(req, res, next) {
-//   Character
-//     .find()
-//     .sort('-losses')
-//     .limit(100)
-//     .exec(function(err, characters) {
-//       if (err) return next(err);
-//       res.send(characters);
-//     });
-// });
-
-
-/**
- * GET /api/characters/:id
- * Returns detailed character information.
- */
-
-
-/**
- * POST /api/report
- * Reports a character. Character is removed after 4 reports.
- */
-// app.post('/api/report', function(req, res, next) {
-//   var characterId = req.body.characterId;
-
-//   Character.findOne({ characterId: characterId }, function(err, character) {
-//     if (err) return next(err);
-
-//     if (!character) {
-//       return res.status(404).send({ message: 'Character not found.' });
-//     }
-
-//     character.reports++;
-
-//     if (character.reports > 4) {
-//       character.remove();
-//       return res.send({ message: character.name + ' has been deleted.' });
-//     }
-
-//     character.save(function(err) {
-//       if (err) return next(err);
-//       res.send({ message: character.name + ' has been reported.' });
-//     });
-//   });
-// });
-
-/**
- * GET /api/stats
- * Returns characters statistics.
- */
-// app.get('/api/stats', function(req, res, next) {
-//   async.parallel([
-//       function(callback) {
-//         Character.count({}, function(err, count) {
-//           callback(err, count);
-//         });
-//       },
-//       function(callback) {
-//         Character.count({ race: 'Amarr' }, function(err, amarrCount) {
-//           callback(err, amarrCount);
-//         });
-//       },
-//       function(callback) {
-//         Character.count({ race: 'Caldari' }, function(err, caldariCount) {
-//           callback(err, caldariCount);
-//         });
-//       },
-//       function(callback) {
-//         Character.count({ race: 'Gallente' }, function(err, gallenteCount) {
-//           callback(err, gallenteCount);
-//         });
-//       },
-//       function(callback) {
-//         Character.count({ race: 'Minmatar' }, function(err, minmatarCount) {
-//           callback(err, minmatarCount);
-//         });
-//       },
-//       function(callback) {
-//         Character.count({ gender: 'Male' }, function(err, maleCount) {
-//           callback(err, maleCount);
-//         });
-//       },
-//       function(callback) {
-//         Character.count({ gender: 'Female' }, function(err, femaleCount) {
-//           callback(err, femaleCount);
-//         });
-//       },
-//       function(callback) {
-//         Character.aggregate({ $group: { _id: null, total: { $sum: '$wins' } } }, function(err, totalVotes) {
-//             var total = totalVotes.length ? totalVotes[0].total : 0;
-//             callback(err, total);
-//           }
-//         );
-//       },
-//       function(callback) {
-//         Character
-//           .find()
-//           .sort('-wins')
-//           .limit(100)
-//           .select('race')
-//           .exec(function(err, characters) {
-//             if (err) return next(err);
-
-//             var raceCount = _.countBy(characters, function(character) { return character.race; });
-//             var max = _.max(raceCount, function(race) { return race });
-//             var inverted = _.invert(raceCount);
-//             var topRace = inverted[max];
-//             var topCount = raceCount[topRace];
-
-//             callback(err, { race: topRace, count: topCount });
-//           });
-//       },
-//       function(callback) {
-//         Character
-//           .find()
-//           .sort('-wins')
-//           .limit(100)
-//           .select('bloodline')
-//           .exec(function(err, characters) {
-//             if (err) return next(err);
-
-//             var bloodlineCount = _.countBy(characters, function(character) { return character.bloodline; });
-//             var max = _.max(bloodlineCount, function(bloodline) { return bloodline });
-//             var inverted = _.invert(bloodlineCount);
-//             var topBloodline = inverted[max];
-//             var topCount = bloodlineCount[topBloodline];
-
-//             callback(err, { bloodline: topBloodline, count: topCount });
-//           });
-//       }
-//     ],
-//     function(err, results) {
-//       if (err) return next(err);
-
-//       res.send({
-//         totalCount: results[0],
-//         amarrCount: results[1],
-//         caldariCount: results[2],
-//         gallenteCount: results[3],
-//         minmatarCount: results[4],
-//         maleCount: results[5],
-//         femaleCount: results[6],
-//         totalVotes: results[7],
-//         leadingRace: results[8],
-//         leadingBloodline: results[9]
-//       });
-//     });
-// });
-
-
-
-
