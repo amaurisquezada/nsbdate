@@ -23,12 +23,13 @@ export class App extends React.Component {
 
   componentDidMount() {
     if (!this.state.user.cuid){
-      this.receiveUser()
+      this.receiveUser(localStorage.user)
+      console.log(localStorage.user, "from app mount")
     }   
   }
 
-  receiveUser() {
-    AppActions.currentUser()
+  receiveUser(name) {
+    AppActions.currentUser(name)
   }
 
   render() {

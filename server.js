@@ -119,6 +119,7 @@ app.get('/api/get-convos', function(req, res, next) {
           .exec(function(err, convo) {
           if (err) return next(err);
           res.send(convo);
+          console.log(convo, "from refresh")
         });
     } else {
 
@@ -127,6 +128,7 @@ app.get('/api/get-convos', function(req, res, next) {
           .exec(function(err, convo) {
           if (err) return next(err);
           res.send(convo);
+          console.log(convo, "from refresh female")
         });
     }
 });
@@ -393,6 +395,16 @@ socket.on('subscribe', function(room) {
         socket.join(room); 
 })
 
+socket.on('updateLastClicked', function(payload) {
+  var _this = this
+  var lcString = 'lastClicked.' + payload.userId
+  var updatedAttr = {}
+  updatedAttr[lcString] = Date.now()
+  Conversation.findByIdAndUpdate(payload.convoId, {$set: updatedAttr}, {new: true}, function(err, convo) {
+    if (err) return next(err);
+  });
+})
+
 socket.on('newMessage', function(payload){
   Conversation.findById(payload.convoId, function(err, convo) {
     if (err) return next(err);
@@ -402,10 +414,8 @@ socket.on('newMessage', function(payload){
       user: payload.authorId
     });
     message.save()
-    console.log(convo, "before push")
     convo.messages.push(message)
     convo.save()
-    console.log(convo, "after push")
     io.to(payload.convoId).emit('updateMessages', convo)
   });
 })

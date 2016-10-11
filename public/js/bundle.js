@@ -284,13 +284,14 @@ var App = exports.App = function (_React$Component) {
     key: 'componentDidMount',
     value: function componentDidMount() {
       if (!this.state.user.cuid) {
-        this.receiveUser();
+        this.receiveUser(localStorage.user);
+        console.log(localStorage.user, "from app mount");
       }
     }
   }, {
     key: 'receiveUser',
-    value: function receiveUser() {
-      AppActions.currentUser();
+    value: function receiveUser(name) {
+      AppActions.currentUser(name);
     }
   }, {
     key: 'render',
@@ -402,9 +403,6 @@ var Chat = function (_React$Component) {
     value: function componentWillMount() {
       var _this2 = this;
 
-      this.socket = (0, _socket2.default)();
-      this.socket.on('updateMessages', this.updateMessages);
-      this.socket.on('updatedConvo', this.updateCurrentConvo);
       _ChatStore2.default.on('change', function () {
         _this2.setState({
           convos: _ChatStore2.default.getConvos(),
@@ -424,8 +422,12 @@ var Chat = function (_React$Component) {
     value: function componentDidMount() {
       var _this3 = this;
 
+      ChatActions.getConvos();
+      ChatActions.getLastConvo();
+      this.socket = (0, _socket2.default)();
+      this.socket.on('updateMessages', this.updateMessages);
+      this.socket.on('updatedConvo', this.updateCurrentConvo);
       this.timer1 = setTimeout(function () {
-        console.log(_this3.state.convos);
         var convos = _this3.state.convos;
         var currentConvo = _this3.state.currentConvo;
         _this3.socket.emit('subscribe', _this3.props.user._id);
@@ -435,11 +437,11 @@ var Chat = function (_React$Component) {
               lastMessage = convos[i].messages[convos[i].messages.length - 1],
               lastMessageDate = lastMessage ? (0, _moment2.default)(lastMessage.dateCreated).valueOf() : (0, _moment2.default)(convos[i].dateCreated).valueOf(),
               lastConvoClick = convos[i].lastClicked[_this3.props.user._id];
-          console.log(lastMessage, "last message");
-          console.log(lastMessageDate, "last message date");
-          console.log(lastConvoClick, "last convo click");
           newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false;
           _this3.socket.emit('subscribe', convos[i]._id);
+          if (convoId == currentConvo._id) {
+            _this3.socket.emit("updateLastClicked", { convoId: convoId, userId: _this3.props.user._id });
+          }
         }
         _this3.setState({ convoStatuses: newState });
       }, 100);
@@ -464,6 +466,7 @@ var Chat = function (_React$Component) {
         var node = _reactDom2.default.findDOMNode(this.refs.chatDiv);
         node.scrollTop = node.scrollHeight;
       }
+      localStorage.user = this.props.user.firstName;
     }
   }, {
     key: 'handleChange',
@@ -473,7 +476,6 @@ var Chat = function (_React$Component) {
   }, {
     key: 'onSubmit',
     value: function onSubmit(e) {
-      console.log(this.state);
       e.preventDefault();
       var inputText = this.refs.form.value;
       this.socket.emit('newMessage', { text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id });

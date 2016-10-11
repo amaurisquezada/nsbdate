@@ -27,9 +27,6 @@ export default class Chat extends React.Component {
 	}
 
 	componentWillMount() {
-		this.socket = io()
-		this.socket.on('updateMessages', this.updateMessages)
-		this.socket.on('updatedConvo', this.updateCurrentConvo)
     ChatStore.on('change', () => {
       this.setState({
         convos: ChatStore.getConvos(),
@@ -47,8 +44,12 @@ export default class Chat extends React.Component {
 
 
   componentDidMount() {
+  	ChatActions.getConvos()
+    ChatActions.getLastConvo()
+  	this.socket = io()
+		this.socket.on('updateMessages', this.updateMessages)
+		this.socket.on('updatedConvo', this.updateCurrentConvo)
   	this.timer1 = setTimeout(() => {
-  		console.log(this.state.convos)
 	  	const convos = this.state.convos
 	  	const currentConvo = this.state.currentConvo
 	  	this.socket.emit('subscribe', this.props.user._id)
@@ -58,11 +59,11 @@ export default class Chat extends React.Component {
 	  		lastMessage = convos[i].messages[convos[i].messages.length - 1],
 	  		lastMessageDate = lastMessage ? moment(lastMessage.dateCreated).valueOf() : moment(convos[i].dateCreated).valueOf(),
 	  		lastConvoClick = convos[i].lastClicked[this.props.user._id];
-	  		console.log(lastMessage, "last message")
-	  		console.log(lastMessageDate, "last message date")
-	  		console.log(lastConvoClick, "last convo click")
 	  		newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false 
 	  		this.socket.emit('subscribe', convos[i]._id)
+	  		if (convoId == currentConvo._id) {
+	  			this.socket.emit("updateLastClicked", {convoId: convoId, userId: this.props.user._id})
+	  		}
 	  	}
 	  	this.setState({convoStatuses: newState})
   	}, 100);
@@ -84,6 +85,7 @@ export default class Chat extends React.Component {
 	    const node = ReactDOM.findDOMNode(this.refs.chatDiv)
 	    node.scrollTop = node.scrollHeight
 	  }
+	  localStorage.user = this.props.user.firstName;
   }
 
   handleChange(e) {
@@ -91,7 +93,6 @@ export default class Chat extends React.Component {
   }
 
   onSubmit(e) {
-  	console.log(this.state)
   	e.preventDefault()
   	const inputText = this.refs.form.value
   	this.socket.emit('newMessage', {text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id})
