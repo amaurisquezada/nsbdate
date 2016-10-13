@@ -40,13 +40,17 @@ export default class Video extends React.Component {
 			mySocket: '',
 			peerSocket: '',
 			peerCuid: '',
+			peerName: '',
+			peerAge: '',
 			selecting: false
 		}
 	}
 
 	componentWillMount() {
 		const peerId = this.props.user.cuid
-		this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: {cuid:peerId}});
+		const fn = this.props.user.firstName
+		const age = this.props.user.age
+		this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: {cuid:peerId, firstName: fn, age: age}});
 		this.peer.on('open', this.open);
 		this.peer.on('call', this.onCall);
 		this.peer.on('error', this.error);
@@ -99,14 +103,29 @@ export default class Video extends React.Component {
 	}
 
 	femaleAction() {
-		this.socket.emit('addToWsm', {peerId: this.peer.id, peerCuid: this.peer.options.metadata.cuid})
+		this.socket.emit('addToWsm', {
+			peerId: this.peer.id, 
+			peerCuid: this.peer.options.metadata.cuid, 
+			peerName: this.peer.options.metadata.firstName,
+			peerAge: this.peer.options.metadata.age
+		})
 	}
 
 	idRetrieval(payload) {
 		const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
      cam.then( (mediaStream) => {
-      this.setState({mySource: URL.createObjectURL(mediaStream), peerCuid: payload.peerCuid})
-      const call = this.peer.call(payload.peerId, mediaStream, {metadata: {peerSocket: this.socket.id, peerCuid: this.props.user.cuid}})
+      this.setState({
+      	mySource: URL.createObjectURL(mediaStream), 
+      	peerCuid: payload.peerCuid,
+      	peerName: payload.peerName,
+      	peerAge: payload.peerAge
+      })
+      const call = this.peer.call(payload.peerId, mediaStream, {metadata: {
+      	peerSocket: this.socket.id, 
+      	peerCuid: this.props.user.cuid,
+      	peerName: this.props.user.firstName,
+      	peerAge: this.props.user.age
+      }})
       this.step3(call)
      })
      cam.catch((error) => { console.log("error getting camera") });
@@ -139,7 +158,8 @@ export default class Video extends React.Component {
 		} else {
 			this.socket.emit('liked', {myId:this.props.user.cuid, peerId:this.state.peerCuid, peerSocket: this.state.peerSocket})
 		}		
-			this.setState({selecting: false})		
+			this.setState({selecting: false})
+			window.existingCall.close()
 	}
 
 	makeSelection() {
@@ -169,7 +189,13 @@ export default class Video extends React.Component {
 	onCall(call) {
 		const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
       	cam.then( (mediaStream) => {
-        this.setState({peerSocket: call.metadata.peerSocket, mySource: URL.createObjectURL(mediaStream), peerCuid: call.metadata.peerCuid})
+        this.setState({
+        	peerSocket: call.metadata.peerSocket, 
+        	mySource: URL.createObjectURL(mediaStream), 
+        	peerCuid: call.metadata.peerCuid,
+        	peerName: call.metadata.peerName,
+        	peerAge: call.metadata.peerAge
+        })
         call.answer(mediaStream);
         this.step3(call);
       	})
@@ -195,24 +221,26 @@ export default class Video extends React.Component {
 	}
 
 	step3 (call) {
-			var chatLimit;
+			// var chatLimit;
       call.on('stream', stream => {
       	if (this.props.user.gender === "Female") {
       		this.socket.emit('sendSocket', {destination: this.state.peerSocket, socketId: this.socket.id})
       	}
         this.setState({otherSource: URL.createObjectURL(stream)})
         this.buttonHandler()
-          chatLimit = setTimeout(() => {
-        		window.existingCall.close();
-        		alert("Conversation has ended")
-        }, 8000)
+        //   chatLimit = setTimeout(() => {
+        // 		window.existingCall.close();
+        // 		alert("Conversation has ended")
+        // }, 8000)
       });
       window.existingCall = call;
       call.on('close', () => {
-      	clearTimeout(chatLimit)
+      	// clearTimeout(chatLimit)
 				VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
       	console.log("call finished")
-      	this.setState({buttonStatus: true})
+      	if (!this.state.selecting) {
+      		this.setState({buttonStatus: true})
+      	}
       });
     }
 
@@ -224,7 +252,6 @@ export default class Video extends React.Component {
 		const leftButtonClass = buttonStatus ? "disabled-button" : "text-danger g-arrows"
 
 		const rightButtonClass = buttonStatus ? "disabled-button" : "text-success g-arrows"
-
 		return (
 			<div>
 
@@ -242,8 +269,13 @@ export default class Video extends React.Component {
             <Glyphicon glyph="arrow-right" className={rightButtonClass} onClick={buttonStatus ? null : this.likeHandler} ></Glyphicon>
           </div>
 				</div>
+				<Display if={this.state.peerName && this.state.peerAge}>
+					<div className="peer-name-wrapper">
+						<p>{this.state.peerName + ", " + this.state.peerAge}</p>
+					</div>
+				</Display>
 				<Display if={this.state.selecting}>
-					<div id="test-div-1">
+					<div id="selection-div">
 						<h3>The video chat has ended. Please make a selection!</h3>
 					</div>
 				</Display>

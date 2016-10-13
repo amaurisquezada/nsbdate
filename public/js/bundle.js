@@ -434,7 +434,9 @@ var Chat = function (_React$Component) {
         var newState = {};
         for (var i in convos) {
           var convoId = convos[i]._id,
-              lastMessage = convos[i].messages[convos[i].messages.length - 1],
+
+          //needs to find last message from other user, not simply the last message. Logic after this must be adjusted accordingly.
+          lastMessage = convos[i].messages[convos[i].messages.length - 1],
               lastMessageDate = lastMessage ? (0, _moment2.default)(lastMessage.dateCreated).valueOf() : (0, _moment2.default)(convos[i].dateCreated).valueOf(),
               lastConvoClick = convos[i].lastClicked[_this3.props.user._id];
           newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false;
@@ -1280,6 +1282,8 @@ var Video = function (_React$Component) {
 			mySocket: '',
 			peerSocket: '',
 			peerCuid: '',
+			peerName: '',
+			peerAge: '',
 			selecting: false
 		};
 		return _this;
@@ -1289,7 +1293,9 @@ var Video = function (_React$Component) {
 		key: 'componentWillMount',
 		value: function componentWillMount() {
 			var peerId = this.props.user.cuid;
-			this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId } });
+			var fn = this.props.user.firstName;
+			var age = this.props.user.age;
+			this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId, firstName: fn, age: age } });
 			this.peer.on('open', this.open);
 			this.peer.on('call', this.onCall);
 			this.peer.on('error', this.error);
@@ -1347,7 +1353,12 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'femaleAction',
 		value: function femaleAction() {
-			this.socket.emit('addToWsm', { peerId: this.peer.id, peerCuid: this.peer.options.metadata.cuid });
+			this.socket.emit('addToWsm', {
+				peerId: this.peer.id,
+				peerCuid: this.peer.options.metadata.cuid,
+				peerName: this.peer.options.metadata.firstName,
+				peerAge: this.peer.options.metadata.age
+			});
 		}
 	}, {
 		key: 'idRetrieval',
@@ -1356,8 +1367,18 @@ var Video = function (_React$Component) {
 
 			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
 			cam.then(function (mediaStream) {
-				_this2.setState({ mySource: URL.createObjectURL(mediaStream), peerCuid: payload.peerCuid });
-				var call = _this2.peer.call(payload.peerId, mediaStream, { metadata: { peerSocket: _this2.socket.id, peerCuid: _this2.props.user.cuid } });
+				_this2.setState({
+					mySource: URL.createObjectURL(mediaStream),
+					peerCuid: payload.peerCuid,
+					peerName: payload.peerName,
+					peerAge: payload.peerAge
+				});
+				var call = _this2.peer.call(payload.peerId, mediaStream, { metadata: {
+						peerSocket: _this2.socket.id,
+						peerCuid: _this2.props.user.cuid,
+						peerName: _this2.props.user.firstName,
+						peerAge: _this2.props.user.age
+					} });
 				_this2.step3(call);
 			});
 			cam.catch(function (error) {
@@ -1397,6 +1418,7 @@ var Video = function (_React$Component) {
 				this.socket.emit('liked', { myId: this.props.user.cuid, peerId: this.state.peerCuid, peerSocket: this.state.peerSocket });
 			}
 			this.setState({ selecting: false });
+			window.existingCall.close();
 		}
 	}, {
 		key: 'makeSelection',
@@ -1436,7 +1458,13 @@ var Video = function (_React$Component) {
 
 			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
 			cam.then(function (mediaStream) {
-				_this4.setState({ peerSocket: call.metadata.peerSocket, mySource: URL.createObjectURL(mediaStream), peerCuid: call.metadata.peerCuid });
+				_this4.setState({
+					peerSocket: call.metadata.peerSocket,
+					mySource: URL.createObjectURL(mediaStream),
+					peerCuid: call.metadata.peerCuid,
+					peerName: call.metadata.peerName,
+					peerAge: call.metadata.peerAge
+				});
 				call.answer(mediaStream);
 				_this4.step3(call);
 			});
@@ -1463,24 +1491,26 @@ var Video = function (_React$Component) {
 		value: function step3(call) {
 			var _this5 = this;
 
-			var chatLimit;
+			// var chatLimit;
 			call.on('stream', function (stream) {
 				if (_this5.props.user.gender === "Female") {
 					_this5.socket.emit('sendSocket', { destination: _this5.state.peerSocket, socketId: _this5.socket.id });
 				}
 				_this5.setState({ otherSource: URL.createObjectURL(stream) });
 				_this5.buttonHandler();
-				chatLimit = setTimeout(function () {
-					window.existingCall.close();
-					alert("Conversation has ended");
-				}, 8000);
+				//   chatLimit = setTimeout(() => {
+				// 		window.existingCall.close();
+				// 		alert("Conversation has ended")
+				// }, 8000)
 			});
 			window.existingCall = call;
 			call.on('close', function () {
-				clearTimeout(chatLimit);
+				// clearTimeout(chatLimit)
 				VideoActions.addToPreviousChats(_this5.state.peerCuid, _this5.props.user.cuid);
 				console.log("call finished");
-				_this5.setState({ buttonStatus: true });
+				if (!_this5.state.selecting) {
+					_this5.setState({ buttonStatus: true });
+				}
 			});
 		}
 	}, {
@@ -1493,7 +1523,6 @@ var Video = function (_React$Component) {
 			var leftButtonClass = buttonStatus ? "disabled-button" : "text-danger g-arrows";
 
 			var rightButtonClass = buttonStatus ? "disabled-button" : "text-success g-arrows";
-
 			return _react2.default.createElement(
 				'div',
 				null,
@@ -1525,10 +1554,23 @@ var Video = function (_React$Component) {
 				),
 				_react2.default.createElement(
 					_Display2.default,
+					{ 'if': this.state.peerName && this.state.peerAge },
+					_react2.default.createElement(
+						'div',
+						{ className: 'peer-name-wrapper' },
+						_react2.default.createElement(
+							'p',
+							null,
+							this.state.peerName + ", " + this.state.peerAge
+						)
+					)
+				),
+				_react2.default.createElement(
+					_Display2.default,
 					{ 'if': this.state.selecting },
 					_react2.default.createElement(
 						'div',
-						{ id: 'test-div-1' },
+						{ id: 'selection-div' },
 						_react2.default.createElement(
 							'h3',
 							null,

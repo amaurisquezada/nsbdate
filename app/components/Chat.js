@@ -56,6 +56,7 @@ export default class Chat extends React.Component {
 	  	var newState = {}
 	  	for (var i in convos) {
 	  		var convoId = convos[i]._id,
+	  		//needs to find last message from other user, not simply the last message. Logic after this must be adjusted accordingly.
 	  		lastMessage = convos[i].messages[convos[i].messages.length - 1],
 	  		lastMessageDate = lastMessage ? moment(lastMessage.dateCreated).valueOf() : moment(convos[i].dateCreated).valueOf(),
 	  		lastConvoClick = convos[i].lastClicked[this.props.user._id];
