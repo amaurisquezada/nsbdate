@@ -29,6 +29,8 @@ export default class Video extends React.Component {
 		this.peerSocket = this.peerSocket.bind(this)
 		this.makeSelection = this.makeSelection.bind(this)
 		this.likeHandler = this.likeHandler.bind(this)
+		this.womanAvailableToChat = this.womanAvailableToChat.bind(this)
+		this.notAvailable = this.notAvailable.bind(this)
 		this.newMatch = this.newMatch.bind(this)
 		this.step1 = this.step1.bind(this)
 		this.step2 = this.step2.bind(this)
@@ -42,7 +44,8 @@ export default class Video extends React.Component {
 			peerCuid: '',
 			peerName: '',
 			peerAge: '',
-			selecting: false
+			selecting: false,
+			waiting: false
 		}
 	}
 
@@ -57,6 +60,8 @@ export default class Video extends React.Component {
 		this.socket = io()
 		this.socket.on('connect', this.connect);
 		this.socket.on('makeSelection', this.makeSelection);
+		this.socket.on('womanAvailableToChat', this.womanAvailableToChat)
+		this.socket.on('notAvailable', this.notAvailable);
 		this.socket.on('peerSocket', this.peerSocket);
 		this.socket.on('closeEvent', this.closeEvent);
 		this.socket.on('idRetrieval', this.idRetrieval)
@@ -118,7 +123,8 @@ export default class Video extends React.Component {
       	mySource: URL.createObjectURL(mediaStream), 
       	peerCuid: payload.peerCuid,
       	peerName: payload.peerName,
-      	peerAge: payload.peerAge
+      	peerAge: payload.peerAge,
+      	waiting: false
       })
       const call = this.peer.call(payload.peerId, mediaStream, {metadata: {
       	peerSocket: this.socket.id, 
@@ -166,17 +172,26 @@ export default class Video extends React.Component {
 		this.setState({selecting:true})
 	}
 
-	noEligibleUsers() {
-		console.log("no more eligible users")
+	notAvailable() {
+		this.setState({waiting: true})
+		console.log('all potential matches are busy at the moment')
 	}
 
+	noEligibleUsers() {
+		this.setState({waiting: true})
+	}
+
+	womanAvailableToChat() {
+		this.state.waiting ? this.nextMatch() : null
+	}
+	
 	closeEvent() {
-		console.log("received close event")
-		window.existingCall.close()
+			console.log("received close event")
+			window.existingCall.close()
 	}
 
 	connect() {
-		console.log(this.socket.id, "from socket connect")
+		this.props.user.gender === "Female" ? this.socket.emit('femaleRoom') : this.socket.emit('maleRoom')
 	}
 
 	peerSocket(payload) {
@@ -194,7 +209,8 @@ export default class Video extends React.Component {
         	mySource: URL.createObjectURL(mediaStream), 
         	peerCuid: call.metadata.peerCuid,
         	peerName: call.metadata.peerName,
-        	peerAge: call.metadata.peerAge
+        	peerAge: call.metadata.peerAge,
+        	waiting: false
         })
         call.answer(mediaStream);
         this.step3(call);

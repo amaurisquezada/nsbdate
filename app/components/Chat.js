@@ -44,11 +44,11 @@ export default class Chat extends React.Component {
 
 
   componentDidMount() {
-  	ChatActions.getConvos()
-    ChatActions.getLastConvo()
   	this.socket = io()
 		this.socket.on('updateMessages', this.updateMessages)
 		this.socket.on('updatedConvo', this.updateCurrentConvo)
+  	ChatActions.getConvos()
+    ChatActions.getLastConvo()
   	this.timer1 = setTimeout(() => {
 	  	const convos = this.state.convos
 	  	const currentConvo = this.state.currentConvo
@@ -56,10 +56,12 @@ export default class Chat extends React.Component {
 	  	var newState = {}
 	  	for (var i in convos) {
 	  		var convoId = convos[i]._id,
-	  		//needs to find last message from other user, not simply the last message. Logic after this must be adjusted accordingly.
-	  		lastMessage = convos[i].messages[convos[i].messages.length - 1],
+	  		lastMessage = convos[i].messages.reverse().find((message) => {
+	  			return message.user != this.props.user._id
+	  		}),
 	  		lastMessageDate = lastMessage ? moment(lastMessage.dateCreated).valueOf() : moment(convos[i].dateCreated).valueOf(),
 	  		lastConvoClick = convos[i].lastClicked[this.props.user._id];
+	  		console.log(lastMessage, "from lm fixer")
 	  		newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false 
 	  		this.socket.emit('subscribe', convos[i]._id)
 	  		if (convoId == currentConvo._id) {

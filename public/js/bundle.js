@@ -422,11 +422,11 @@ var Chat = function (_React$Component) {
     value: function componentDidMount() {
       var _this3 = this;
 
-      ChatActions.getConvos();
-      ChatActions.getLastConvo();
       this.socket = (0, _socket2.default)();
       this.socket.on('updateMessages', this.updateMessages);
       this.socket.on('updatedConvo', this.updateCurrentConvo);
+      ChatActions.getConvos();
+      ChatActions.getLastConvo();
       this.timer1 = setTimeout(function () {
         var convos = _this3.state.convos;
         var currentConvo = _this3.state.currentConvo;
@@ -434,11 +434,12 @@ var Chat = function (_React$Component) {
         var newState = {};
         for (var i in convos) {
           var convoId = convos[i]._id,
-
-          //needs to find last message from other user, not simply the last message. Logic after this must be adjusted accordingly.
-          lastMessage = convos[i].messages[convos[i].messages.length - 1],
+              lastMessage = convos[i].messages.reverse().find(function (message) {
+            return message.user != _this3.props.user._id;
+          }),
               lastMessageDate = lastMessage ? (0, _moment2.default)(lastMessage.dateCreated).valueOf() : (0, _moment2.default)(convos[i].dateCreated).valueOf(),
               lastConvoClick = convos[i].lastClicked[_this3.props.user._id];
+          console.log(lastMessage, "from lm fixer");
           newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false;
           _this3.socket.emit('subscribe', convos[i]._id);
           if (convoId == currentConvo._id) {
@@ -1271,6 +1272,8 @@ var Video = function (_React$Component) {
 		_this.peerSocket = _this.peerSocket.bind(_this);
 		_this.makeSelection = _this.makeSelection.bind(_this);
 		_this.likeHandler = _this.likeHandler.bind(_this);
+		_this.womanAvailableToChat = _this.womanAvailableToChat.bind(_this);
+		_this.notAvailable = _this.notAvailable.bind(_this);
 		_this.newMatch = _this.newMatch.bind(_this);
 		_this.step1 = _this.step1.bind(_this);
 		_this.step2 = _this.step2.bind(_this);
@@ -1284,7 +1287,8 @@ var Video = function (_React$Component) {
 			peerCuid: '',
 			peerName: '',
 			peerAge: '',
-			selecting: false
+			selecting: false,
+			waiting: false
 		};
 		return _this;
 	}
@@ -1302,6 +1306,8 @@ var Video = function (_React$Component) {
 			this.socket = (0, _socket2.default)();
 			this.socket.on('connect', this.connect);
 			this.socket.on('makeSelection', this.makeSelection);
+			this.socket.on('womanAvailableToChat', this.womanAvailableToChat);
+			this.socket.on('notAvailable', this.notAvailable);
 			this.socket.on('peerSocket', this.peerSocket);
 			this.socket.on('closeEvent', this.closeEvent);
 			this.socket.on('idRetrieval', this.idRetrieval);
@@ -1371,7 +1377,8 @@ var Video = function (_React$Component) {
 					mySource: URL.createObjectURL(mediaStream),
 					peerCuid: payload.peerCuid,
 					peerName: payload.peerName,
-					peerAge: payload.peerAge
+					peerAge: payload.peerAge,
+					waiting: false
 				});
 				var call = _this2.peer.call(payload.peerId, mediaStream, { metadata: {
 						peerSocket: _this2.socket.id,
@@ -1426,9 +1433,20 @@ var Video = function (_React$Component) {
 			this.setState({ selecting: true });
 		}
 	}, {
+		key: 'notAvailable',
+		value: function notAvailable() {
+			this.setState({ waiting: true });
+			console.log('all potential matches are busy at the moment');
+		}
+	}, {
 		key: 'noEligibleUsers',
 		value: function noEligibleUsers() {
-			console.log("no more eligible users");
+			this.setState({ waiting: true });
+		}
+	}, {
+		key: 'womanAvailableToChat',
+		value: function womanAvailableToChat() {
+			this.state.waiting ? this.nextMatch() : null;
 		}
 	}, {
 		key: 'closeEvent',
@@ -1439,7 +1457,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'connect',
 		value: function connect() {
-			console.log(this.socket.id, "from socket connect");
+			this.props.user.gender === "Female" ? this.socket.emit('femaleRoom') : this.socket.emit('maleRoom');
 		}
 	}, {
 		key: 'peerSocket',
@@ -1463,7 +1481,8 @@ var Video = function (_React$Component) {
 					mySource: URL.createObjectURL(mediaStream),
 					peerCuid: call.metadata.peerCuid,
 					peerName: call.metadata.peerName,
-					peerAge: call.metadata.peerAge
+					peerAge: call.metadata.peerAge,
+					waiting: false
 				});
 				call.answer(mediaStream);
 				_this4.step3(call);

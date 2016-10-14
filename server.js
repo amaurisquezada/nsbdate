@@ -23,9 +23,11 @@ require('dotenv').config();
 var cuid = require('cuid')
 var ExpressPeerServer = require('peer').ExpressPeerServer;
 
-var menSeekingWomen = []
-var womenSeekingMen = []
-var connectedUsers = []
+var menSeekingWomen = [];
+var womenSeekingMen = [];
+var connectedUsers = [];
+var allConnectedMen = [];
+var allConnectedWomen = [];
 
 mongoose.connect(config.database);
 mongoose.connection.on('error', function() {
@@ -272,7 +274,6 @@ app.use('/connect', ExpressPeerServer(server, options));
 var io = require('socket.io')(server);
 
 io.sockets.on('connection', function(socket){
-  console.log("New user conncected")
   connectedUsers.push(socket)
 
 socket.on('disconnect', function(){
@@ -282,13 +283,23 @@ socket.on('disconnect', function(){
   }
 })
 
+socket.on('femaleRoom', function(){
+  this.join('femaleRoom')
+})
+
+socket.on('maleRoom', function(){
+  this.join('maleRoom')
+})
+
 socket.on('addToWsm', function(payload){
-  womenSeekingMen.push(payload)
-  // this.broadcast.emit('step1', payload)
+  _.contains(allConnectedWomen, payload) ? null : allConnectedWomen.push(payload)
+  _.contains(womenSeekingMen, payload) ? null : womenSeekingMen.push(payload)
+  io.to("maleRoom").emit('womanAvailableToChat')
 })
 
 socket.on('fetchFromWsm', function(payload){
   var self = this
+  _.contains(allConnectedMen, payload) ? null : allConnectedMen.push(payload)
   User.findOne({ cuid: payload }, function(err, user) {
     if (err) return next(err);
       console.log(err)
@@ -297,9 +308,12 @@ socket.on('fetchFromWsm', function(payload){
     }
     var chatHistory = user.previousChats
     var eligible = _.filter(womenSeekingMen, function(pm){ return !_.contains(chatHistory, pm.peerCuid)})[0]
+    var connectedEligible = _.filter(allConnectedWomen, function(pm){ return !_.contains(chatHistory, pm.peerCuid)})[0]
     if (eligible) {
       var selection = womenSeekingMen.splice(womenSeekingMen.indexOf(eligible), 1)[0]
       self.emit('idRetrieval', selection)  
+    } else if (connectedEligible){
+      self.emit('notAvailable')
     } else {
       self.emit('noEligibleUsers')
     }
@@ -417,6 +431,7 @@ socket.on('newMessage', function(payload){
     convo.messages.push(message)
     convo.save()
     io.to(payload.convoId).emit('updateMessages', convo)
+    console.log(convo._id, "from new message on server")
   });
 })
 
