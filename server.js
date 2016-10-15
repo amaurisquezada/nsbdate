@@ -277,6 +277,15 @@ io.sockets.on('connection', function(socket){
   connectedUsers.push(socket)
 
 socket.on('disconnect', function(){
+  var id = this.id
+  if (this.gender == "male"){
+    allConnectedMen = _.reject(allConnectedMen, function(el) { return el.socket === id; });
+  } else {
+    allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.socket === id; });
+    womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.socket === id; });
+    io.to("maleRoom").emit('womanChange')
+  }
+  
   connectedUsers.pop();
   if (connectedUsers.length < 1){
     womenSeekingMen = [];
@@ -284,23 +293,34 @@ socket.on('disconnect', function(){
 })
 
 socket.on('femaleRoom', function(){
+  this.gender = "female"
   this.join('femaleRoom')
 })
 
 socket.on('maleRoom', function(){
+  this.gender = 'male'
   this.join('maleRoom')
+})
+
+socket.on('femaleDisconnect', function(payload){
+  allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.peerCuid === payload; });
+  womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.peerCuid === payload; });
+})
+
+socket.on('maleDisconnect', function(payload){
+  allConnectedMen = _.reject(allConnectedMen, function(el) { return el === payload; });
 })
 
 socket.on('addToWsm', function(payload){
   _.contains(allConnectedWomen, payload) ? null : allConnectedWomen.push(payload)
   _.contains(womenSeekingMen, payload) ? null : womenSeekingMen.push(payload)
-  io.to("maleRoom").emit('womanAvailableToChat')
+  io.to("maleRoom").emit('womanChange')
 })
 
 socket.on('fetchFromWsm', function(payload){
   var self = this
   _.contains(allConnectedMen, payload) ? null : allConnectedMen.push(payload)
-  User.findOne({ cuid: payload }, function(err, user) {
+  User.findOne({ cuid: payload.cuid }, function(err, user) {
     if (err) return next(err);
       console.log(err)
     if (!user) {

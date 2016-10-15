@@ -29,7 +29,7 @@ export default class Video extends React.Component {
 		this.peerSocket = this.peerSocket.bind(this)
 		this.makeSelection = this.makeSelection.bind(this)
 		this.likeHandler = this.likeHandler.bind(this)
-		this.womanAvailableToChat = this.womanAvailableToChat.bind(this)
+		this.womanChange = this.womanChange.bind(this)
 		this.notAvailable = this.notAvailable.bind(this)
 		this.newMatch = this.newMatch.bind(this)
 		this.step1 = this.step1.bind(this)
@@ -60,7 +60,7 @@ export default class Video extends React.Component {
 		this.socket = io()
 		this.socket.on('connect', this.connect);
 		this.socket.on('makeSelection', this.makeSelection);
-		this.socket.on('womanAvailableToChat', this.womanAvailableToChat)
+		this.socket.on('womanChange', this.womanChange)
 		this.socket.on('notAvailable', this.notAvailable);
 		this.socket.on('peerSocket', this.peerSocket);
 		this.socket.on('closeEvent', this.closeEvent);
@@ -72,7 +72,7 @@ export default class Video extends React.Component {
 
 	componentWillUnmount() {
 		this.peer.destroy()
-		this.socket.close()
+		this.socket.disconnect()
 		VideoStore.removeListener('change', this.nextMatch)
 	}
 
@@ -104,15 +104,18 @@ export default class Video extends React.Component {
 	}
 
 	maleAction() {
-		this.socket.emit('fetchFromWsm', this.props.user.cuid)
+		const id = "/#" + this.socket.io.engine.id
+		this.socket.emit('fetchFromWsm', {cuid: this.props.user.cuid, socket: id})
 	}
 
 	femaleAction() {
+		const id = "/#" + this.socket.io.engine.id
 		this.socket.emit('addToWsm', {
-			peerId: this.peer.id, 
+			peerId: this.peer.id,
 			peerCuid: this.peer.options.metadata.cuid, 
 			peerName: this.peer.options.metadata.firstName,
-			peerAge: this.peer.options.metadata.age
+			peerAge: this.peer.options.metadata.age,
+			socket: id
 		})
 	}
 
@@ -179,15 +182,16 @@ export default class Video extends React.Component {
 
 	noEligibleUsers() {
 		this.setState({waiting: true})
+		console.log("No available users at the moment")
 	}
 
-	womanAvailableToChat() {
+	womanChange() {
 		this.state.waiting ? this.nextMatch() : null
 	}
 	
 	closeEvent() {
-			console.log("received close event")
-			window.existingCall.close()
+		console.log("received close event")
+		window.existingCall.close()
 	}
 
 	connect() {

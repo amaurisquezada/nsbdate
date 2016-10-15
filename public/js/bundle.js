@@ -1272,7 +1272,7 @@ var Video = function (_React$Component) {
 		_this.peerSocket = _this.peerSocket.bind(_this);
 		_this.makeSelection = _this.makeSelection.bind(_this);
 		_this.likeHandler = _this.likeHandler.bind(_this);
-		_this.womanAvailableToChat = _this.womanAvailableToChat.bind(_this);
+		_this.womanChange = _this.womanChange.bind(_this);
 		_this.notAvailable = _this.notAvailable.bind(_this);
 		_this.newMatch = _this.newMatch.bind(_this);
 		_this.step1 = _this.step1.bind(_this);
@@ -1306,7 +1306,7 @@ var Video = function (_React$Component) {
 			this.socket = (0, _socket2.default)();
 			this.socket.on('connect', this.connect);
 			this.socket.on('makeSelection', this.makeSelection);
-			this.socket.on('womanAvailableToChat', this.womanAvailableToChat);
+			this.socket.on('womanChange', this.womanChange);
 			this.socket.on('notAvailable', this.notAvailable);
 			this.socket.on('peerSocket', this.peerSocket);
 			this.socket.on('closeEvent', this.closeEvent);
@@ -1319,7 +1319,7 @@ var Video = function (_React$Component) {
 		key: 'componentWillUnmount',
 		value: function componentWillUnmount() {
 			this.peer.destroy();
-			this.socket.close();
+			this.socket.disconnect();
 			_VideoStore2.default.removeListener('change', this.nextMatch);
 		}
 	}, {
@@ -1354,16 +1354,19 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'maleAction',
 		value: function maleAction() {
-			this.socket.emit('fetchFromWsm', this.props.user.cuid);
+			var id = "/#" + this.socket.io.engine.id;
+			this.socket.emit('fetchFromWsm', { cuid: this.props.user.cuid, socket: id });
 		}
 	}, {
 		key: 'femaleAction',
 		value: function femaleAction() {
+			var id = "/#" + this.socket.io.engine.id;
 			this.socket.emit('addToWsm', {
 				peerId: this.peer.id,
 				peerCuid: this.peer.options.metadata.cuid,
 				peerName: this.peer.options.metadata.firstName,
-				peerAge: this.peer.options.metadata.age
+				peerAge: this.peer.options.metadata.age,
+				socket: id
 			});
 		}
 	}, {
@@ -1442,10 +1445,11 @@ var Video = function (_React$Component) {
 		key: 'noEligibleUsers',
 		value: function noEligibleUsers() {
 			this.setState({ waiting: true });
+			console.log("No available users at the moment");
 		}
 	}, {
-		key: 'womanAvailableToChat',
-		value: function womanAvailableToChat() {
+		key: 'womanChange',
+		value: function womanChange() {
 			this.state.waiting ? this.nextMatch() : null;
 		}
 	}, {
