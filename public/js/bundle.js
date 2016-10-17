@@ -1272,7 +1272,7 @@ var Video = function (_React$Component) {
 		_this.peerSocket = _this.peerSocket.bind(_this);
 		_this.makeSelection = _this.makeSelection.bind(_this);
 		_this.likeHandler = _this.likeHandler.bind(_this);
-		_this.womanChange = _this.womanChange.bind(_this);
+		_this.usersChange = _this.usersChange.bind(_this);
 		_this.notAvailable = _this.notAvailable.bind(_this);
 		_this.newMatch = _this.newMatch.bind(_this);
 		_this.step1 = _this.step1.bind(_this);
@@ -1288,7 +1288,8 @@ var Video = function (_React$Component) {
 			peerName: '',
 			peerAge: '',
 			selecting: false,
-			waiting: false
+			waiting: false,
+			streaming: false
 		};
 		return _this;
 	}
@@ -1306,7 +1307,7 @@ var Video = function (_React$Component) {
 			this.socket = (0, _socket2.default)();
 			this.socket.on('connect', this.connect);
 			this.socket.on('makeSelection', this.makeSelection);
-			this.socket.on('womanChange', this.womanChange);
+			this.socket.on('usersChange', this.usersChange);
 			this.socket.on('notAvailable', this.notAvailable);
 			this.socket.on('peerSocket', this.peerSocket);
 			this.socket.on('closeEvent', this.closeEvent);
@@ -1448,15 +1449,18 @@ var Video = function (_React$Component) {
 			console.log("No available users at the moment");
 		}
 	}, {
-		key: 'womanChange',
-		value: function womanChange() {
-			this.state.waiting ? this.nextMatch() : null;
+		key: 'usersChange',
+		value: function usersChange(payload) {
+			if (this.props.user.cuid != payload && !this.state.streaming && this.state.peerSocket != payload) {
+				console.log("received user change" + payload);
+				this.state.waiting ? this.nextMatch() : null;
+			}
 		}
 	}, {
 		key: 'closeEvent',
 		value: function closeEvent() {
-			console.log("received close event");
 			window.existingCall.close();
+			this.setState({ streaming: false, waiting: true });
 		}
 	}, {
 		key: 'connect',
@@ -1470,9 +1474,7 @@ var Video = function (_React$Component) {
 		}
 	}, {
 		key: 'newMatch',
-		value: function newMatch() {
-			alert("Successful Match");
-		}
+		value: function newMatch() {}
 	}, {
 		key: 'onCall',
 		value: function onCall(call) {
@@ -1519,7 +1521,7 @@ var Video = function (_React$Component) {
 				if (_this5.props.user.gender === "Female") {
 					_this5.socket.emit('sendSocket', { destination: _this5.state.peerSocket, socketId: _this5.socket.id });
 				}
-				_this5.setState({ otherSource: URL.createObjectURL(stream) });
+				_this5.setState({ otherSource: URL.createObjectURL(stream), streaming: true });
 				_this5.buttonHandler();
 				//   chatLimit = setTimeout(() => {
 				// 		window.existingCall.close();
@@ -1529,10 +1531,15 @@ var Video = function (_React$Component) {
 			window.existingCall = call;
 			call.on('close', function () {
 				// clearTimeout(chatLimit)
-				VideoActions.addToPreviousChats(_this5.state.peerCuid, _this5.props.user.cuid);
-				console.log("call finished");
-				if (!_this5.state.selecting) {
-					_this5.setState({ buttonStatus: true });
+				console.log(_this5.props.user.gender, _this5.state.streaming);
+				if (_this5.state.streaming) {
+					_this5.socket.emit('rejected', _this5.state.peerSocket);
+					_this5.setState({ streaming: false });
+					VideoActions.addToPreviousChats(_this5.state.peerCuid, _this5.props.user.cuid);
+					console.log("call finished");
+					if (!_this5.state.selecting) {
+						_this5.setState({ buttonStatus: true });
+					}
 				}
 			});
 		}

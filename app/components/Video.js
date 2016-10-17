@@ -29,7 +29,7 @@ export default class Video extends React.Component {
 		this.peerSocket = this.peerSocket.bind(this)
 		this.makeSelection = this.makeSelection.bind(this)
 		this.likeHandler = this.likeHandler.bind(this)
-		this.womanChange = this.womanChange.bind(this)
+		this.usersChange = this.usersChange.bind(this)
 		this.notAvailable = this.notAvailable.bind(this)
 		this.newMatch = this.newMatch.bind(this)
 		this.step1 = this.step1.bind(this)
@@ -45,7 +45,8 @@ export default class Video extends React.Component {
 			peerName: '',
 			peerAge: '',
 			selecting: false,
-			waiting: false
+			waiting: false,
+			streaming: false
 		}
 	}
 
@@ -60,7 +61,7 @@ export default class Video extends React.Component {
 		this.socket = io()
 		this.socket.on('connect', this.connect);
 		this.socket.on('makeSelection', this.makeSelection);
-		this.socket.on('womanChange', this.womanChange)
+		this.socket.on('usersChange', this.usersChange)
 		this.socket.on('notAvailable', this.notAvailable);
 		this.socket.on('peerSocket', this.peerSocket);
 		this.socket.on('closeEvent', this.closeEvent);
@@ -185,13 +186,16 @@ export default class Video extends React.Component {
 		console.log("No available users at the moment")
 	}
 
-	womanChange() {
-		this.state.waiting ? this.nextMatch() : null
+	usersChange(payload) {
+		if (this.props.user.cuid != payload && !this.state.streaming && this.state.peerSocket != payload){
+		console.log("received user change" + payload)
+		this.state.waiting ? this.nextMatch() : null			
+		}
 	}
 	
 	closeEvent() {
-		console.log("received close event")
 		window.existingCall.close()
+		this.setState({streaming: false, waiting: true})
 	}
 
 	connect() {
@@ -202,7 +206,6 @@ export default class Video extends React.Component {
 		this.setState({peerSocket: payload})
 	}
 	newMatch(){
-		alert("Successful Match")
 	}
 
 	onCall(call) {
@@ -246,7 +249,7 @@ export default class Video extends React.Component {
       	if (this.props.user.gender === "Female") {
       		this.socket.emit('sendSocket', {destination: this.state.peerSocket, socketId: this.socket.id})
       	}
-        this.setState({otherSource: URL.createObjectURL(stream)})
+        this.setState({otherSource: URL.createObjectURL(stream), streaming: true})
         this.buttonHandler()
         //   chatLimit = setTimeout(() => {
         // 		window.existingCall.close();
@@ -256,10 +259,15 @@ export default class Video extends React.Component {
       window.existingCall = call;
       call.on('close', () => {
       	// clearTimeout(chatLimit)
-				VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
-      	console.log("call finished")
-      	if (!this.state.selecting) {
-      		this.setState({buttonStatus: true})
+      	console.log(this.props.user.gender, this.state.streaming)
+      	if (this.state.streaming){
+      		this.socket.emit('rejected', this.state.peerSocket)
+	      	this.setState({streaming: false})
+					VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+	      	console.log("call finished")
+	      	if (!this.state.selecting) {
+	      		this.setState({buttonStatus: true})
+	      	}
       	}
       });
     }

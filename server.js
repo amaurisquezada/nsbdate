@@ -277,13 +277,20 @@ io.sockets.on('connection', function(socket){
   connectedUsers.push(socket)
 
 socket.on('disconnect', function(){
-  var id = this.id
+  var id = this.id,
+  clientId = id.substring(2)
   if (this.gender == "male"){
     allConnectedMen = _.reject(allConnectedMen, function(el) { return el.socket === id; });
+    menSeekingWomen = _.reject(menSeekingWomen, function(el) { return el.socket === id; });
+    console.log(allConnectedMen, "ACM after disconnect")
+    console.log(menSeekingWomen, "MSW after disconnect")
+    io.to('femaleRoom').emit("usersChange", clientId)
   } else {
     allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.socket === id; });
     womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.socket === id; });
-    io.to("maleRoom").emit('womanChange')
+    console.log(allConnectedWomen, "ACW after disconnect")
+    console.log(womenSeekingMen, "WSM after disconnect")
+    io.to("maleRoom").emit('usersChange', 'from female disconnect')
   }
   
   connectedUsers.pop();
@@ -302,24 +309,46 @@ socket.on('maleRoom', function(){
   this.join('maleRoom')
 })
 
-socket.on('femaleDisconnect', function(payload){
-  allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.peerCuid === payload; });
-  womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.peerCuid === payload; });
-})
+// socket.on('femaleDisconnect', function(payload){
+//   allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.peerCuid === payload; });
+//   womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.peerCuid === payload; });
+// })
 
-socket.on('maleDisconnect', function(payload){
-  allConnectedMen = _.reject(allConnectedMen, function(el) { return el === payload; });
-})
+// socket.on('maleDisconnect', function(payload){
+//   allConnectedMen = _.reject(allConnectedMen, function(el) { return el === payload; });
+// })
 
 socket.on('addToWsm', function(payload){
-  _.contains(allConnectedWomen, payload) ? null : allConnectedWomen.push(payload)
-  _.contains(womenSeekingMen, payload) ? null : womenSeekingMen.push(payload)
-  io.to("maleRoom").emit('womanChange')
+  var self = this
+  _.findWhere(allConnectedWomen, payload) ? null : allConnectedWomen.push(payload)
+  _.findWhere(womenSeekingMen, payload) ? null : womenSeekingMen.push(payload)
+  console.log(allConnectedWomen, "ACW after Add to WSM")
+  console.log(womenSeekingMen, "WSM after Add to WSM")
+  User.findOne({ cuid: payload.peerCuid }, function(err, user) {
+    if (err) return next(err);
+      console.log(err)
+    if (!user) {
+      console.log('User not found.');
+    }
+    var chatHistory = user.previousChats
+    var eligible = _.filter(menSeekingWomen, function(pm){ return !_.contains(chatHistory, pm.cuid)})[0]
+    var connectedEligible = _.filter(allConnectedMen, function(pm){ return !_.contains(chatHistory, pm.cuid)})[0]
+    if (eligible || connectedEligible) {
+      self.emit('notAvailable')  
+    } else {
+      self.emit('noEligibleUsers')
+    }
+  })
+  io.to("maleRoom").emit('usersChange', undefined)
 })
 
 socket.on('fetchFromWsm', function(payload){
-  var self = this
-  _.contains(allConnectedMen, payload) ? null : allConnectedMen.push(payload)
+  var self = this;
+  var selection;
+  _.findWhere(allConnectedMen, payload) ? null : allConnectedMen.push(payload)
+  _.findWhere(menSeekingWomen, payload) ? null : menSeekingWomen.push(payload)
+  console.log(menSeekingWomen, "MSW before matching")
+  console.log(womenSeekingMen, "WSM before matching")
   User.findOne({ cuid: payload.cuid }, function(err, user) {
     if (err) return next(err);
       console.log(err)
@@ -329,14 +358,19 @@ socket.on('fetchFromWsm', function(payload){
     var chatHistory = user.previousChats
     var eligible = _.filter(womenSeekingMen, function(pm){ return !_.contains(chatHistory, pm.peerCuid)})[0]
     var connectedEligible = _.filter(allConnectedWomen, function(pm){ return !_.contains(chatHistory, pm.peerCuid)})[0]
+    var thisUser = _.filter(menSeekingWomen, function(pm){ return !_.contains(chatHistory, pm.cuid)})[0]
     if (eligible) {
-      var selection = womenSeekingMen.splice(womenSeekingMen.indexOf(eligible), 1)[0]
-      self.emit('idRetrieval', selection)  
+      selection = womenSeekingMen.splice(womenSeekingMen.indexOf(eligible), 1)[0]
+      menSeekingWomen.splice(menSeekingWomen.indexOf(thisUser), 1)
+      self.emit('idRetrieval', selection)
     } else if (connectedEligible){
       self.emit('notAvailable')
     } else {
       self.emit('noEligibleUsers')
     }
+    selection ? io.to('femaleRoom').emit('usersChange', selection.peerCuid) : io.to('femaleRoom').emit('usersChange', undefined)
+    console.log(menSeekingWomen, "MSW after matching")
+    console.log(womenSeekingMen, "WSM after matching")
   })
 })
 
