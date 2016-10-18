@@ -3,6 +3,7 @@ import io from 'socket.io-client'
 import root from 'window-or-global'
 import { Glyphicon } from 'react-bootstrap'
 import Display from './Display'
+import _ from 'underscore'
 import * as VideoActions from '../actions/VideoActions'
 import VideoStore from '../stores/VideoStore'
 
@@ -18,12 +19,14 @@ export default class Video extends React.Component {
 		this.connect = this.connect.bind(this)
 		this.idRetrieval =  this.idRetrieval.bind(this)
 		this.onCall = this.onCall.bind(this)
+		this.closeCall = this.closeCall.bind(this)
 		this.error = this.error.bind(this)
 		this.nextMatch = this.nextMatch.bind(this)
 		this.femaleAction = this.femaleAction.bind(this)
 		this.maleAction = this.maleAction.bind(this)
 		this.buttonHandler = this.buttonHandler.bind(this)
 		this.reject = this.reject.bind(this)
+		this.userReady = this.userReady.bind(this)
 		this.noEligibleUsers = this.noEligibleUsers.bind(this)
 		this.closeEvent = this.closeEvent.bind(this)
 		this.peerSocket = this.peerSocket.bind(this)
@@ -45,8 +48,9 @@ export default class Video extends React.Component {
 			peerName: '',
 			peerAge: '',
 			selecting: false,
-			waiting: false,
-			streaming: false
+			waiting: true,
+			streaming: false,
+			previousChats: []
 		}
 	}
 
@@ -62,19 +66,30 @@ export default class Video extends React.Component {
 		this.socket.on('connect', this.connect);
 		this.socket.on('makeSelection', this.makeSelection);
 		this.socket.on('usersChange', this.usersChange)
+		this.socket.on('userReady', this.userReady);
 		this.socket.on('notAvailable', this.notAvailable);
 		this.socket.on('peerSocket', this.peerSocket);
 		this.socket.on('closeEvent', this.closeEvent);
 		this.socket.on('idRetrieval', this.idRetrieval)
 		this.socket.on('noEligibleUsers', this.noEligibleUsers)
 		this.socket.on('newMatch', this.newMatch)
-    VideoStore.on('change', this.nextMatch)
+    	VideoStore.on('change', () => {
+    		this.nextMatch()
+    		console.log("coming from video store change")
+    	})
+    	VideoStore.on('initial', () => {
+    		this.setState({previousChats: VideoStore.getPreviousChats()})
+    	})
+	}
+
+	componentDidMount(){
+		VideoActions.retrievePreviousChats()
 	}
 
 	componentWillUnmount() {
 		this.peer.destroy()
 		this.socket.disconnect()
-		VideoStore.removeListener('change', this.nextMatch)
+		VideoStore.removeAllListeners()
 	}
 
 	step1 () {
@@ -92,6 +107,7 @@ export default class Video extends React.Component {
 		// 	fulfill(this.step1())
 		// }).then(() => {
 			this.nextMatch()
+			console.log(this.state.previousChats, "from open")
 		// })	
 	}
 
@@ -121,24 +137,26 @@ export default class Video extends React.Component {
 	}
 
 	idRetrieval(payload) {
-		const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
-     cam.then( (mediaStream) => {
-      this.setState({
-      	mySource: URL.createObjectURL(mediaStream), 
-      	peerCuid: payload.peerCuid,
-      	peerName: payload.peerName,
-      	peerAge: payload.peerAge,
-      	waiting: false
-      })
-      const call = this.peer.call(payload.peerId, mediaStream, {metadata: {
-      	peerSocket: this.socket.id, 
-      	peerCuid: this.props.user.cuid,
-      	peerName: this.props.user.firstName,
-      	peerAge: this.props.user.age
-      }})
-      this.step3(call)
-     })
-     cam.catch((error) => { console.log("error getting camera") });
+		if (!this.state.streaming && this.state.waiting) {
+			const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
+	     	cam.then( (mediaStream) => {
+	      	this.setState({
+		      	mySource: URL.createObjectURL(mediaStream), 
+		      	peerCuid: payload.peerCuid,
+		      	peerName: payload.peerName,
+		      	peerAge: payload.peerAge,
+		      	waiting: false
+	      	})
+	      	const call = this.peer.call(payload.peerId, mediaStream, {metadata: {
+		      	peerSocket: this.socket.id, 
+		      	peerCuid: this.props.user.cuid,
+		      	peerName: this.props.user.firstName,
+		      	peerAge: this.props.user.age
+	      	}})
+	      this.step3(call)
+	     })
+	     cam.catch((error) => { console.log("error getting camera") });
+ 	}
 
 
 		// new Promise((fulfill, reject) => {
@@ -156,10 +174,14 @@ export default class Video extends React.Component {
 		}, 2000)
 	}
 
-	reject() {
+	closeCall() {
 		window.existingCall.close()
-		this.setState({selecting: false})
+	}
+
+	reject() {
 		this.socket.emit('rejected', this.state.peerSocket)
+		VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+		this.setState({selecting: false, streaming: false, waiting: true, buttonStatus: true}, this.closeCall)
 	}
 
 	likeHandler() {
@@ -167,9 +189,9 @@ export default class Video extends React.Component {
 			this.socket.emit('likeToo', {myId:this.props.user.cuid, peerId:this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket})
 		} else {
 			this.socket.emit('liked', {myId:this.props.user.cuid, peerId:this.state.peerCuid, peerSocket: this.state.peerSocket})
-		}		
-			this.setState({selecting: false})
-			window.existingCall.close()
+		}
+		VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+		this.setState({selecting: false, streaming: false, waiting: true, buttonStatus: true}, this.closeCall)
 	}
 
 	makeSelection() {
@@ -187,19 +209,30 @@ export default class Video extends React.Component {
 	}
 
 	usersChange(payload) {
-		if (this.props.user.cuid != payload && !this.state.streaming && this.state.peerSocket != payload){
-		console.log("received user change" + payload)
+		const check = _.contains(this.state.previousChats, payload)
+		if (this.props.user.cuid != payload && !this.state.streaming && !check){
+		console.log("received user change " + payload + " " + Date.now())
 		this.state.waiting ? this.nextMatch() : null			
 		}
 	}
+
+	userReady(payload) {
+		if (!this.state.streaming && !this.state.waiting) {
+			this.socket.emit("pullFromWaiting")
+		}
+	}
 	
-	closeEvent() {
-		window.existingCall.close()
-		this.setState({streaming: false, waiting: true})
+	closeEvent(payload) {
+		console.log(payload, "payload from closeEvent")
+		console.log(this.state.peerSocket, "peerSocket from closeEvent")
+		if((!this.state.selecting && !this.state.streaming) || (this.state.peerSocket == payload && this.state.streaming)) {
+			VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+			this.setState({streaming: false, waiting: true, buttonStatus: true}, this.closeCall)
+		}
 	}
 
 	connect() {
-		this.props.user.gender === "Female" ? this.socket.emit('femaleRoom') : this.socket.emit('maleRoom')
+		this.socket.emit('joinRoom', this.props.user)
 	}
 
 	peerSocket(payload) {
@@ -249,7 +282,10 @@ export default class Video extends React.Component {
       	if (this.props.user.gender === "Female") {
       		this.socket.emit('sendSocket', {destination: this.state.peerSocket, socketId: this.socket.id})
       	}
-        this.setState({otherSource: URL.createObjectURL(stream), streaming: true})
+      	const previousChats = this.state.previousChats.slice()
+      	previousChats.push(this.state.peerCuid)
+        this.setState({otherSource: URL.createObjectURL(stream), streaming: true, previousChats: previousChats})
+        console.log(this.state.previousChats, "from stream")
         this.buttonHandler()
         //   chatLimit = setTimeout(() => {
         // 		window.existingCall.close();
@@ -259,14 +295,17 @@ export default class Video extends React.Component {
       window.existingCall = call;
       call.on('close', () => {
       	// clearTimeout(chatLimit)
-      	console.log(this.props.user.gender, this.state.streaming)
+      	console.log(this.props.user.firstName + " " + this.props.user.gender + " " + this.state.streaming)
       	if (this.state.streaming){
       		this.socket.emit('rejected', this.state.peerSocket)
-	      	this.setState({streaming: false})
-					VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
-	      	console.log("call finished")
+	      	this.setState({streaming: false, waiting: true})
+			// this.state.selecting ? null : VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+	      	console.log("shouldn't get here from like or reject button")
 	      	if (!this.state.selecting) {
 	      		this.setState({buttonStatus: true})
+	      		VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+	      	} else {
+	      		VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid, "null")
 	      	}
       	}
       });

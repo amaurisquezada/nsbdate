@@ -180,6 +180,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.addToPreviousChats = addToPreviousChats;
+exports.retrievePreviousChats = retrievePreviousChats;
 
 var _dispatcher = require('../dispatcher');
 
@@ -211,12 +212,22 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // }
 
 function addToPreviousChats(id, myId) {
+  var event = arguments.length <= 2 || arguments[2] === undefined ? "change" : arguments[2];
+
   $.ajax({
     type: 'PUT',
     url: '/api/atpc',
     data: { peerId: id, myId: myId }
   }).done(function (data) {
-    _dispatcher2.default.dispatch({ type: "ADD_TO_PREVIOUS_CHATS" });
+    _dispatcher2.default.dispatch({ type: "ADD_TO_PREVIOUS_CHATS", previousChats: data, event: event });
+  }).fail(function (err) {
+    console.log(err);
+  });
+}
+
+function retrievePreviousChats() {
+  $.ajax({ url: '/api/rpc' }).done(function (data) {
+    _dispatcher2.default.dispatch({ type: "SET_PREVIOUS_CHATS", previousChats: data });
   }).fail(function (err) {
     console.log(err);
   });
@@ -262,6 +273,7 @@ var App = exports.App = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this));
 
+    _this.handleChange = _this.handleChange.bind(_this);
     _this.state = {
       user: _AppStore2.default.getUser(),
       available: ''
@@ -272,13 +284,7 @@ var App = exports.App = function (_React$Component) {
   _createClass(App, [{
     key: 'componentWillMount',
     value: function componentWillMount() {
-      var _this2 = this;
-
-      _AppStore2.default.on('change', function () {
-        _this2.setState({
-          user: _AppStore2.default.getUser()
-        });
-      });
+      _AppStore2.default.on('change', this.handleChange);
     }
   }, {
     key: 'componentDidMount',
@@ -289,6 +295,16 @@ var App = exports.App = function (_React$Component) {
       }
     }
   }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      _AppStore2.default.removeListener('change', this.handleChange);
+    }
+  }, {
+    key: 'handleChange',
+    value: function handleChange() {
+      this.setState({ user: _AppStore2.default.getUser() });
+    }
+  }, {
     key: 'receiveUser',
     value: function receiveUser(name) {
       AppActions.currentUser(name);
@@ -296,12 +312,12 @@ var App = exports.App = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
-      var _this3 = this;
+      var _this2 = this;
 
       var childrenWithProps = _react2.default.Children.map(this.props.children, function (child) {
         return _react2.default.cloneElement(child, {
-          user: _this3.state.user,
-          available: _this3.state.available
+          user: _this2.state.user,
+          available: _this2.state.available
         });
       });
 
@@ -1227,6 +1243,10 @@ var _Display = require('./Display');
 
 var _Display2 = _interopRequireDefault(_Display);
 
+var _underscore = require('underscore');
+
+var _underscore2 = _interopRequireDefault(_underscore);
+
 var _VideoActions = require('../actions/VideoActions');
 
 var VideoActions = _interopRequireWildcard(_VideoActions);
@@ -1261,12 +1281,14 @@ var Video = function (_React$Component) {
 		_this.connect = _this.connect.bind(_this);
 		_this.idRetrieval = _this.idRetrieval.bind(_this);
 		_this.onCall = _this.onCall.bind(_this);
+		_this.closeCall = _this.closeCall.bind(_this);
 		_this.error = _this.error.bind(_this);
 		_this.nextMatch = _this.nextMatch.bind(_this);
 		_this.femaleAction = _this.femaleAction.bind(_this);
 		_this.maleAction = _this.maleAction.bind(_this);
 		_this.buttonHandler = _this.buttonHandler.bind(_this);
 		_this.reject = _this.reject.bind(_this);
+		_this.userReady = _this.userReady.bind(_this);
 		_this.noEligibleUsers = _this.noEligibleUsers.bind(_this);
 		_this.closeEvent = _this.closeEvent.bind(_this);
 		_this.peerSocket = _this.peerSocket.bind(_this);
@@ -1288,8 +1310,9 @@ var Video = function (_React$Component) {
 			peerName: '',
 			peerAge: '',
 			selecting: false,
-			waiting: false,
-			streaming: false
+			waiting: true,
+			streaming: false,
+			previousChats: []
 		};
 		return _this;
 	}
@@ -1297,6 +1320,8 @@ var Video = function (_React$Component) {
 	_createClass(Video, [{
 		key: 'componentWillMount',
 		value: function componentWillMount() {
+			var _this2 = this;
+
 			var peerId = this.props.user.cuid;
 			var fn = this.props.user.firstName;
 			var age = this.props.user.age;
@@ -1308,20 +1333,32 @@ var Video = function (_React$Component) {
 			this.socket.on('connect', this.connect);
 			this.socket.on('makeSelection', this.makeSelection);
 			this.socket.on('usersChange', this.usersChange);
+			this.socket.on('userReady', this.userReady);
 			this.socket.on('notAvailable', this.notAvailable);
 			this.socket.on('peerSocket', this.peerSocket);
 			this.socket.on('closeEvent', this.closeEvent);
 			this.socket.on('idRetrieval', this.idRetrieval);
 			this.socket.on('noEligibleUsers', this.noEligibleUsers);
 			this.socket.on('newMatch', this.newMatch);
-			_VideoStore2.default.on('change', this.nextMatch);
+			_VideoStore2.default.on('change', function () {
+				_this2.nextMatch();
+				console.log("coming from video store change");
+			});
+			_VideoStore2.default.on('initial', function () {
+				_this2.setState({ previousChats: _VideoStore2.default.getPreviousChats() });
+			});
+		}
+	}, {
+		key: 'componentDidMount',
+		value: function componentDidMount() {
+			VideoActions.retrievePreviousChats();
 		}
 	}, {
 		key: 'componentWillUnmount',
 		value: function componentWillUnmount() {
 			this.peer.destroy();
 			this.socket.disconnect();
-			_VideoStore2.default.removeListener('change', this.nextMatch);
+			_VideoStore2.default.removeAllListeners();
 		}
 	}, {
 		key: 'step1',
@@ -1340,6 +1377,7 @@ var Video = function (_React$Component) {
 			// 	fulfill(this.step1())
 			// }).then(() => {
 			this.nextMatch();
+			console.log(this.state.previousChats, "from open");
 			// })	
 		}
 	}, {
@@ -1373,28 +1411,30 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'idRetrieval',
 		value: function idRetrieval(payload) {
-			var _this2 = this;
+			var _this3 = this;
 
-			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
-			cam.then(function (mediaStream) {
-				_this2.setState({
-					mySource: URL.createObjectURL(mediaStream),
-					peerCuid: payload.peerCuid,
-					peerName: payload.peerName,
-					peerAge: payload.peerAge,
-					waiting: false
+			if (!this.state.streaming && this.state.waiting) {
+				var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+				cam.then(function (mediaStream) {
+					_this3.setState({
+						mySource: URL.createObjectURL(mediaStream),
+						peerCuid: payload.peerCuid,
+						peerName: payload.peerName,
+						peerAge: payload.peerAge,
+						waiting: false
+					});
+					var call = _this3.peer.call(payload.peerId, mediaStream, { metadata: {
+							peerSocket: _this3.socket.id,
+							peerCuid: _this3.props.user.cuid,
+							peerName: _this3.props.user.firstName,
+							peerAge: _this3.props.user.age
+						} });
+					_this3.step3(call);
 				});
-				var call = _this2.peer.call(payload.peerId, mediaStream, { metadata: {
-						peerSocket: _this2.socket.id,
-						peerCuid: _this2.props.user.cuid,
-						peerName: _this2.props.user.firstName,
-						peerAge: _this2.props.user.age
-					} });
-				_this2.step3(call);
-			});
-			cam.catch(function (error) {
-				console.log("error getting camera");
-			});
+				cam.catch(function (error) {
+					console.log("error getting camera");
+				});
+			}
 
 			// new Promise((fulfill, reject) => {
 			// 	const call = this.peer.call(payload, mediaStream, {metadata: {peerSocket: this.socket.id}})
@@ -1406,19 +1446,24 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'buttonHandler',
 		value: function buttonHandler() {
-			var _this3 = this;
+			var _this4 = this;
 
 			this.setState({ buttonStatus: true });
 			setTimeout(function () {
-				_this3.setState({ buttonStatus: false });
+				_this4.setState({ buttonStatus: false });
 			}, 2000);
+		}
+	}, {
+		key: 'closeCall',
+		value: function closeCall() {
+			window.existingCall.close();
 		}
 	}, {
 		key: 'reject',
 		value: function reject() {
-			window.existingCall.close();
-			this.setState({ selecting: false });
 			this.socket.emit('rejected', this.state.peerSocket);
+			VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
+			this.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true }, this.closeCall);
 		}
 	}, {
 		key: 'likeHandler',
@@ -1428,8 +1473,8 @@ var Video = function (_React$Component) {
 			} else {
 				this.socket.emit('liked', { myId: this.props.user.cuid, peerId: this.state.peerCuid, peerSocket: this.state.peerSocket });
 			}
-			this.setState({ selecting: false });
-			window.existingCall.close();
+			VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
+			this.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true }, this.closeCall);
 		}
 	}, {
 		key: 'makeSelection',
@@ -1451,21 +1496,33 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'usersChange',
 		value: function usersChange(payload) {
-			if (this.props.user.cuid != payload && !this.state.streaming && this.state.peerSocket != payload) {
-				console.log("received user change" + payload);
+			var check = _underscore2.default.contains(this.state.previousChats, payload);
+			if (this.props.user.cuid != payload && !this.state.streaming && !check) {
+				console.log("received user change " + payload + " " + Date.now());
 				this.state.waiting ? this.nextMatch() : null;
 			}
 		}
 	}, {
+		key: 'userReady',
+		value: function userReady(payload) {
+			if (!this.state.streaming && !this.state.waiting) {
+				this.socket.emit("pullFromWaiting");
+			}
+		}
+	}, {
 		key: 'closeEvent',
-		value: function closeEvent() {
-			window.existingCall.close();
-			this.setState({ streaming: false, waiting: true });
+		value: function closeEvent(payload) {
+			console.log(payload, "payload from closeEvent");
+			console.log(this.state.peerSocket, "peerSocket from closeEvent");
+			if (!this.state.selecting && !this.state.streaming || this.state.peerSocket == payload && this.state.streaming) {
+				VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
+				this.setState({ streaming: false, waiting: true, buttonStatus: true }, this.closeCall);
+			}
 		}
 	}, {
 		key: 'connect',
 		value: function connect() {
-			this.props.user.gender === "Female" ? this.socket.emit('femaleRoom') : this.socket.emit('maleRoom');
+			this.socket.emit('joinRoom', this.props.user);
 		}
 	}, {
 		key: 'peerSocket',
@@ -1478,11 +1535,11 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'onCall',
 		value: function onCall(call) {
-			var _this4 = this;
+			var _this5 = this;
 
 			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
 			cam.then(function (mediaStream) {
-				_this4.setState({
+				_this5.setState({
 					peerSocket: call.metadata.peerSocket,
 					mySource: URL.createObjectURL(mediaStream),
 					peerCuid: call.metadata.peerCuid,
@@ -1491,7 +1548,7 @@ var Video = function (_React$Component) {
 					waiting: false
 				});
 				call.answer(mediaStream);
-				_this4.step3(call);
+				_this5.step3(call);
 			});
 			cam.catch(function (error) {
 				console.log("error getting camera");
@@ -1514,15 +1571,18 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'step3',
 		value: function step3(call) {
-			var _this5 = this;
+			var _this6 = this;
 
 			// var chatLimit;
 			call.on('stream', function (stream) {
-				if (_this5.props.user.gender === "Female") {
-					_this5.socket.emit('sendSocket', { destination: _this5.state.peerSocket, socketId: _this5.socket.id });
+				if (_this6.props.user.gender === "Female") {
+					_this6.socket.emit('sendSocket', { destination: _this6.state.peerSocket, socketId: _this6.socket.id });
 				}
-				_this5.setState({ otherSource: URL.createObjectURL(stream), streaming: true });
-				_this5.buttonHandler();
+				var previousChats = _this6.state.previousChats.slice();
+				previousChats.push(_this6.state.peerCuid);
+				_this6.setState({ otherSource: URL.createObjectURL(stream), streaming: true, previousChats: previousChats });
+				console.log(_this6.state.previousChats, "from stream");
+				_this6.buttonHandler();
 				//   chatLimit = setTimeout(() => {
 				// 		window.existingCall.close();
 				// 		alert("Conversation has ended")
@@ -1531,14 +1591,17 @@ var Video = function (_React$Component) {
 			window.existingCall = call;
 			call.on('close', function () {
 				// clearTimeout(chatLimit)
-				console.log(_this5.props.user.gender, _this5.state.streaming);
-				if (_this5.state.streaming) {
-					_this5.socket.emit('rejected', _this5.state.peerSocket);
-					_this5.setState({ streaming: false });
-					VideoActions.addToPreviousChats(_this5.state.peerCuid, _this5.props.user.cuid);
-					console.log("call finished");
-					if (!_this5.state.selecting) {
-						_this5.setState({ buttonStatus: true });
+				console.log(_this6.props.user.firstName + " " + _this6.props.user.gender + " " + _this6.state.streaming);
+				if (_this6.state.streaming) {
+					_this6.socket.emit('rejected', _this6.state.peerSocket);
+					_this6.setState({ streaming: false, waiting: true });
+					// this.state.selecting ? null : VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
+					console.log("shouldn't get here from like or reject button");
+					if (!_this6.state.selecting) {
+						_this6.setState({ buttonStatus: true });
+						VideoActions.addToPreviousChats(_this6.state.peerCuid, _this6.props.user.cuid);
+					} else {
+						VideoActions.addToPreviousChats(_this6.state.peerCuid, _this6.props.user.cuid, "null");
 					}
 				}
 			});
@@ -1617,7 +1680,7 @@ var Video = function (_React$Component) {
 
 exports.default = Video;
 
-},{"../actions/VideoActions":5,"../stores/VideoStore":20,"./Display":8,"global":28,"global/document":27,"global/window":28,"react":"react","react-bootstrap":139,"socket.io-client":313,"window-or-global":360}],14:[function(require,module,exports){
+},{"../actions/VideoActions":5,"../stores/VideoStore":20,"./Display":8,"global":28,"global/document":27,"global/window":28,"react":"react","react-bootstrap":139,"socket.io-client":313,"underscore":"underscore","window-or-global":360}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2012,18 +2075,28 @@ var VideoStore = function (_EventEmitter) {
   function VideoStore() {
     _classCallCheck(this, VideoStore);
 
-    return _possibleConstructorReturn(this, Object.getPrototypeOf(VideoStore).call(this));
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(VideoStore).call(this));
+
+    _this.previousChats = [];
+    return _this;
   }
 
   _createClass(VideoStore, [{
     key: 'cuidAddedToPc',
-    value: function cuidAddedToPc() {
-      this.emit('change');
+    value: function cuidAddedToPc(pc, event) {
+      this.previousChats = pc;
+      this.emit(event);
     }
   }, {
-    key: 'getWomanId',
-    value: function getWomanId() {
-      return this.womanId;
+    key: 'getPreviousChats',
+    value: function getPreviousChats() {
+      return this.previousChats;
+    }
+  }, {
+    key: 'setPreviousChats',
+    value: function setPreviousChats(pc) {
+      this.previousChats = pc;
+      this.emit('initial');
     }
   }, {
     key: 'handleActions',
@@ -2031,7 +2104,11 @@ var VideoStore = function (_EventEmitter) {
       switch (action.type) {
         case "ADD_TO_PREVIOUS_CHATS":
           {
-            this.cuidAddedToPc();
+            this.cuidAddedToPc(action.previousChats, action.event);
+          }
+        case "SET_PREVIOUS_CHATS":
+          {
+            this.setPreviousChats(action.previousChats);
           }
       }
     }

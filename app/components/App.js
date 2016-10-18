@@ -7,6 +7,7 @@ export class App extends React.Component {
 
   constructor() {
     super()
+    this.handleChange = this.handleChange.bind(this)
     this.state = {
       user: AppStore.getUser(),
       available: ''
@@ -14,11 +15,7 @@ export class App extends React.Component {
   }
 
   componentWillMount() {
-    AppStore.on('change', () => {
-      this.setState({
-        user: AppStore.getUser()
-      })
-    })
+    AppStore.on('change', this.handleChange)
   }
 
   componentDidMount() {
@@ -26,6 +23,14 @@ export class App extends React.Component {
       this.receiveUser(localStorage.user)
       console.log(localStorage.user, "from app mount")
     }   
+  }
+
+  componentWillUnmount() {
+    AppStore.removeListener('change', this.handleChange)
+  }
+
+  handleChange() {
+    this.setState({user: AppStore.getUser()})
   }
 
   receiveUser(name) {

@@ -4,20 +4,30 @@ import dispatcher from '../dispatcher'
 class VideoStore extends EventEmitter {
   constructor() {
     super()
+    this.previousChats = []
 }
 
-  cuidAddedToPc() {
-   this.emit('change')
+  cuidAddedToPc(pc, event) {
+    this.previousChats = pc
+    this.emit(event)
   }
 
-  getWomanId() {
-    return this.womanId
+  getPreviousChats() {
+    return this.previousChats
+  }
+
+  setPreviousChats(pc) {
+    this.previousChats = pc
+    this.emit('initial')
   }
 
   handleActions(action) {
     switch(action.type) {
       case "ADD_TO_PREVIOUS_CHATS": {
-        this.cuidAddedToPc()
+        this.cuidAddedToPc(action.previousChats, action.event)
+      }
+      case "SET_PREVIOUS_CHATS": {
+        this.setPreviousChats(action.previousChats)
       }
     }
   }
