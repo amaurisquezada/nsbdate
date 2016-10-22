@@ -327,7 +327,25 @@ var App = exports.App = function (_React$Component) {
         _react2.default.createElement(
           'h1',
           { id: 'site-header' },
-          'NSB Date'
+          'N',
+          _react2.default.createElement(
+            'span',
+            { className: 'header2' },
+            'ot'
+          ),
+          'S',
+          _react2.default.createElement(
+            'span',
+            { className: 'header2' },
+            'o'
+          ),
+          'B',
+          _react2.default.createElement(
+            'span',
+            { className: 'header2' },
+            'lind'
+          ),
+          'DATE'
         ),
         childrenWithProps
       );
@@ -634,7 +652,7 @@ var Chat = function (_React$Component) {
 
 exports.default = Chat;
 
-},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"./Nav1":10,"moment":47,"react":"react","react-dom":"react-dom","socket.io-client":313}],8:[function(require,module,exports){
+},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"./Nav1":10,"moment":47,"react":"react","react-dom":"react-dom","socket.io-client":315}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -828,7 +846,12 @@ var Nav1 = function (_React$Component) {
         _react2.default.createElement(
           _reactRouter.Link,
           { className: 'btn btn-default nav-buttons', onClick: this.chatData, eventKey: 2, to: '/mychats' },
-          'My Chats'
+          'My Chats',
+          _react2.default.createElement(
+            'span',
+            { className: 'badge' },
+            '10'
+          )
         ),
         _react2.default.createElement(
           _reactRouter.Link,
@@ -1093,7 +1116,8 @@ var User = exports.User = function (_React$Component) {
     _this.lastgirl = _this.lastgirl.bind(_this);
     _this.reggie = _this.reggie.bind(_this);
     _this.state = {
-      user: _UserStore2.default.getUser()
+      user: _UserStore2.default.getUser(),
+      tempSi: true
     };
     return _this;
   }
@@ -1127,74 +1151,81 @@ var User = exports.User = function (_React$Component) {
     key: 'amauris',
     value: function amauris() {
       AppActions.currentUser('Amauris');
+      this.setState({ tempSi: false });
     }
   }, {
     key: 'austin',
     value: function austin() {
       AppActions.currentUser('Austin');
+      this.setState({ tempSi: false });
     }
   }, {
     key: 'maia',
     value: function maia() {
       AppActions.currentUser('Maia');
+      this.setState({ tempSi: false });
     }
   }, {
     key: 'diffchick',
     value: function diffchick() {
       AppActions.currentUser('Diff');
+      this.setState({ tempSi: false });
     }
   }, {
     key: 'lastgirl',
     value: function lastgirl() {
       AppActions.currentUser('Last');
+      this.setState({ tempSi: false });
     }
   }, {
     key: 'reggie',
     value: function reggie() {
       AppActions.currentUser('Reggie');
+      this.setState({ tempSi: false });
     }
   }, {
     key: 'render',
     value: function render() {
       var matching = this.state.user.available ? "Stop matching" : "Start matching!";
       var buttonClass = this.state.user.available ? "btn btn-danger video-control" : "btn btn-info video-control";
+      var tempSi = this.state.tempSi ? "temp-si" : "hidden";
       return _react2.default.createElement(
         'div',
         { className: 'container' },
         _react2.default.createElement(_Nav2.default, null),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.check, className: 'temp-si' },
+          { onClick: this.check, className: tempSi },
           'See State'
         ),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.amauris, className: 'temp-si' },
+          { onClick: this.amauris, className: tempSi },
           'Sign in as Amauris'
         ),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.austin, className: 'temp-si' },
+          { onClick: this.austin, className: tempSi },
           'Sign in as Austin'
         ),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.maia, className: 'temp-si' },
+          { onClick: this.maia, className: tempSi },
           'Sign in as Maia'
         ),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.diffchick, className: 'temp-si' },
+          { onClick: this.diffchick, className: tempSi },
           'Sign in as Diff Chick'
         ),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.lastgirl, className: 'temp-si' },
+          { onClick: this.lastgirl, className: tempSi },
           'Sign in as Last Girl'
         ),
         _react2.default.createElement(
           _reactBootstrap.Button,
-          { onClick: this.reggie, className: 'temp-si' },
+          { onClick: this.reggie, className: tempSi },
           'Sign in as Reggie'
         ),
         _react2.default.createElement(
@@ -1255,6 +1286,14 @@ var _VideoStore = require('../stores/VideoStore');
 
 var _VideoStore2 = _interopRequireDefault(_VideoStore);
 
+var _reactCountdownClockFork = require('react-countdown-clock-fork');
+
+var _reactCountdownClockFork2 = _interopRequireDefault(_reactCountdownClockFork);
+
+var _reactDelay = require('react-delay');
+
+var _reactDelay2 = _interopRequireDefault(_reactDelay);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -1275,32 +1314,34 @@ var Video = function (_React$Component) {
 	function Video() {
 		_classCallCheck(this, Video);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Video).call(this));
+		var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(Video).call(this));
 
-		_this.open = _this.open.bind(_this);
-		_this.connect = _this.connect.bind(_this);
-		_this.idRetrieval = _this.idRetrieval.bind(_this);
-		_this.onCall = _this.onCall.bind(_this);
-		_this.closeCall = _this.closeCall.bind(_this);
-		_this.error = _this.error.bind(_this);
-		_this.nextMatch = _this.nextMatch.bind(_this);
-		_this.femaleAction = _this.femaleAction.bind(_this);
-		_this.maleAction = _this.maleAction.bind(_this);
-		_this.buttonHandler = _this.buttonHandler.bind(_this);
-		_this.reject = _this.reject.bind(_this);
-		_this.userReady = _this.userReady.bind(_this);
-		_this.noEligibleUsers = _this.noEligibleUsers.bind(_this);
-		_this.closeEvent = _this.closeEvent.bind(_this);
-		_this.peerSocket = _this.peerSocket.bind(_this);
-		_this.makeSelection = _this.makeSelection.bind(_this);
-		_this.likeHandler = _this.likeHandler.bind(_this);
-		_this.usersChange = _this.usersChange.bind(_this);
-		_this.notAvailable = _this.notAvailable.bind(_this);
-		_this.newMatch = _this.newMatch.bind(_this);
-		_this.step1 = _this.step1.bind(_this);
-		_this.step2 = _this.step2.bind(_this);
-		_this.step3 = _this.step3.bind(_this);
-		_this.state = {
+		_this2.open = _this2.open.bind(_this2);
+		_this2.connect = _this2.connect.bind(_this2);
+		_this2.idRetrieval = _this2.idRetrieval.bind(_this2);
+		_this2.onCall = _this2.onCall.bind(_this2);
+		_this2.closeCall = _this2.closeCall.bind(_this2);
+		_this2.error = _this2.error.bind(_this2);
+		_this2.nextMatch = _this2.nextMatch.bind(_this2);
+		_this2.femaleAction = _this2.femaleAction.bind(_this2);
+		_this2.maleAction = _this2.maleAction.bind(_this2);
+		_this2.buttonHandler = _this2.buttonHandler.bind(_this2);
+		_this2.reject = _this2.reject.bind(_this2);
+		_this2.userReady = _this2.userReady.bind(_this2);
+		_this2.noEligibleUsers = _this2.noEligibleUsers.bind(_this2);
+		_this2.closeEvent = _this2.closeEvent.bind(_this2);
+		_this2.peerSocket = _this2.peerSocket.bind(_this2);
+		_this2.makeSelection = _this2.makeSelection.bind(_this2);
+		_this2.likeHandler = _this2.likeHandler.bind(_this2);
+		_this2.usersChange = _this2.usersChange.bind(_this2);
+		_this2.notAvailable = _this2.notAvailable.bind(_this2);
+		_this2.newMatch = _this2.newMatch.bind(_this2);
+		_this2.outOfTime = _this2.outOfTime.bind(_this2);
+		_this2.doubleLike = _this2.doubleLike.bind(_this2);
+		_this2.step1 = _this2.step1.bind(_this2);
+		_this2.step2 = _this2.step2.bind(_this2);
+		_this2.step3 = _this2.step3.bind(_this2);
+		_this2.state = {
 			mySource: '',
 			otherSource: '',
 			buttonStatus: true,
@@ -1314,13 +1355,13 @@ var Video = function (_React$Component) {
 			streaming: false,
 			previousChats: []
 		};
-		return _this;
+		return _this2;
 	}
 
 	_createClass(Video, [{
 		key: 'componentWillMount',
 		value: function componentWillMount() {
-			var _this2 = this;
+			var _this3 = this;
 
 			var peerId = this.props.user.cuid;
 			var fn = this.props.user.firstName;
@@ -1341,11 +1382,11 @@ var Video = function (_React$Component) {
 			this.socket.on('noEligibleUsers', this.noEligibleUsers);
 			this.socket.on('newMatch', this.newMatch);
 			_VideoStore2.default.on('change', function () {
-				_this2.nextMatch();
+				_this3.nextMatch();
 				console.log("coming from video store change");
 			});
 			_VideoStore2.default.on('initial', function () {
-				_this2.setState({ previousChats: _VideoStore2.default.getPreviousChats() });
+				_this3.setState({ previousChats: _VideoStore2.default.getPreviousChats() });
 			});
 		}
 	}, {
@@ -1359,16 +1400,56 @@ var Video = function (_React$Component) {
 			this.peer.destroy();
 			this.socket.disconnect();
 			_VideoStore2.default.removeAllListeners();
+			var id = setTimeout(function () {}, 0);
+			while (id--) {
+				window.clearTimeout(id); // will do nothing if no timeout with id is present
+			}
+			clearTimeout(this.timeout);
 		}
 	}, {
 		key: 'step1',
 		value: function step1() {
+			console.log("timer done");
 			// const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
 			// 	cam.then( (mediaStream) => {
 			//   this.setState({mySource: URL.createObjectURL(mediaStream)})
 			//   window.localStream = mediaStream
 			// 	})
 			// 	cam.catch((error) => { console.log("error getting camera") });
+		}
+	}, {
+		key: 'outOfTime',
+		value: function outOfTime() {
+			var _this4 = this;
+
+			var _this = this;
+			this.timeout = setTimeout(function () {
+				_this4.doubleLike();
+				clearTo();
+			}, 63000);
+
+			function clearTo() {
+				clearTimeout(_this.timeout);
+				console.log("from the time run out");
+			}
+		}
+	}, {
+		key: 'doubleLike',
+		value: function doubleLike() {
+			var id = setTimeout(function () {}, 0),
+			    _this = this;
+			while (id--) {
+				window.clearTimeout(id); // will do nothing if no timeout with id is present
+			}
+
+			console.log('onComplete');
+			if (this.props.user.gender === "Male") {
+				this.socket.emit('likeToo', { myId: this.props.user.cuid, peerId: this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket });
+			}
+			setTimeout(function () {
+				_this.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true }, _this.closeCall);
+				VideoActions.addToPreviousChats(_this.state.peerCuid, _this.props.user.cuid);
+			}, 200);
 		}
 	}, {
 		key: 'open',
@@ -1411,25 +1492,25 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'idRetrieval',
 		value: function idRetrieval(payload) {
-			var _this3 = this;
+			var _this5 = this;
 
 			if (!this.state.streaming && this.state.waiting) {
-				var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+				var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: { width: 1280, height: 720 } });
 				cam.then(function (mediaStream) {
-					_this3.setState({
+					_this5.setState({
 						mySource: URL.createObjectURL(mediaStream),
 						peerCuid: payload.peerCuid,
 						peerName: payload.peerName,
 						peerAge: payload.peerAge,
 						waiting: false
 					});
-					var call = _this3.peer.call(payload.peerId, mediaStream, { metadata: {
-							peerSocket: _this3.socket.id,
-							peerCuid: _this3.props.user.cuid,
-							peerName: _this3.props.user.firstName,
-							peerAge: _this3.props.user.age
+					var call = _this5.peer.call(payload.peerId, mediaStream, { metadata: {
+							peerSocket: _this5.socket.id,
+							peerCuid: _this5.props.user.cuid,
+							peerName: _this5.props.user.firstName,
+							peerAge: _this5.props.user.age
 						} });
-					_this3.step3(call);
+					_this5.step3(call);
 				});
 				cam.catch(function (error) {
 					console.log("error getting camera");
@@ -1446,12 +1527,18 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'buttonHandler',
 		value: function buttonHandler() {
-			var _this4 = this;
+			var _this6 = this;
 
 			this.setState({ buttonStatus: true });
-			setTimeout(function () {
-				_this4.setState({ buttonStatus: false });
+			var timeout = setTimeout(function () {
+				_this6.setState({ buttonStatus: false });
+				clearTo();
 			}, 2000);
+
+			function clearTo() {
+				console.log(timeout, "from button clear");
+				clearTimeout(timeout);
+			}
 		}
 	}, {
 		key: 'closeCall',
@@ -1461,6 +1548,13 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'reject',
 		value: function reject() {
+			console.log(toastr.options, "from reject");
+			toastr.error("no title");
+			var id = setTimeout(function () {}, 0);
+			while (id--) {
+				window.clearTimeout(id); // will do nothing if no timeout with id is present
+			}
+			clearTimeout(this.timeout);
 			this.socket.emit('rejected', this.state.peerSocket);
 			VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
 			this.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true }, this.closeCall);
@@ -1468,6 +1562,11 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'likeHandler',
 		value: function likeHandler() {
+			var id = setTimeout(function () {}, 0);
+			while (id--) {
+				window.clearTimeout(id); // will do nothing if no timeout with id is present
+			}
+			clearTimeout(this.timeout);
 			if (this.state.selecting) {
 				this.socket.emit('likeToo', { myId: this.props.user.cuid, peerId: this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket });
 			} else {
@@ -1512,6 +1611,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'closeEvent',
 		value: function closeEvent(payload) {
+			clearTimeout(this.timeout);
 			console.log(payload, "payload from closeEvent");
 			console.log(this.state.peerSocket, "peerSocket from closeEvent");
 			if (!this.state.selecting && !this.state.streaming || this.state.peerSocket == payload && this.state.streaming) {
@@ -1535,11 +1635,11 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'onCall',
 		value: function onCall(call) {
-			var _this5 = this;
+			var _this7 = this;
 
-			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: { width: 1280, height: 720 } });
 			cam.then(function (mediaStream) {
-				_this5.setState({
+				_this7.setState({
 					peerSocket: call.metadata.peerSocket,
 					mySource: URL.createObjectURL(mediaStream),
 					peerCuid: call.metadata.peerCuid,
@@ -1548,7 +1648,7 @@ var Video = function (_React$Component) {
 					waiting: false
 				});
 				call.answer(mediaStream);
-				_this5.step3(call);
+				_this7.step3(call);
 			});
 			cam.catch(function (error) {
 				console.log("error getting camera");
@@ -1571,18 +1671,18 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'step3',
 		value: function step3(call) {
-			var _this6 = this;
+			var _this8 = this;
 
 			// var chatLimit;
 			call.on('stream', function (stream) {
-				if (_this6.props.user.gender === "Female") {
-					_this6.socket.emit('sendSocket', { destination: _this6.state.peerSocket, socketId: _this6.socket.id });
+				if (_this8.props.user.gender === "Female") {
+					_this8.socket.emit('sendSocket', { destination: _this8.state.peerSocket, socketId: _this8.socket.id });
 				}
-				var previousChats = _this6.state.previousChats.slice();
-				previousChats.push(_this6.state.peerCuid);
-				_this6.setState({ otherSource: URL.createObjectURL(stream), streaming: true, previousChats: previousChats });
-				console.log(_this6.state.previousChats, "from stream");
-				_this6.buttonHandler();
+				var previousChats = _this8.state.previousChats.slice();
+				previousChats.push(_this8.state.peerCuid);
+				_this8.setState({ otherSource: URL.createObjectURL(stream), streaming: true, previousChats: previousChats }, _this8.outOfTime);
+				console.log("repetition check from stream");
+				_this8.buttonHandler();
 				//   chatLimit = setTimeout(() => {
 				// 		window.existingCall.close();
 				// 		alert("Conversation has ended")
@@ -1591,17 +1691,22 @@ var Video = function (_React$Component) {
 			window.existingCall = call;
 			call.on('close', function () {
 				// clearTimeout(chatLimit)
-				console.log(_this6.props.user.firstName + " " + _this6.props.user.gender + " " + _this6.state.streaming);
-				if (_this6.state.streaming) {
-					_this6.socket.emit('rejected', _this6.state.peerSocket);
-					_this6.setState({ streaming: false, waiting: true });
+				var id = setTimeout(function () {}, 0);
+				while (id--) {
+					window.clearTimeout(id); // will do nothing if no timeout with id is present
+				}
+				clearTimeout(_this8.timeout);
+				console.log(_this8.props.user.firstName + " " + _this8.props.user.gender + " " + _this8.state.streaming);
+				if (_this8.state.streaming) {
+					_this8.socket.emit('rejected', _this8.state.peerSocket);
+					_this8.setState({ streaming: false, waiting: true });
 					// this.state.selecting ? null : VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
 					console.log("shouldn't get here from like or reject button");
-					if (!_this6.state.selecting) {
-						_this6.setState({ buttonStatus: true });
-						VideoActions.addToPreviousChats(_this6.state.peerCuid, _this6.props.user.cuid);
+					if (!_this8.state.selecting) {
+						_this8.setState({ buttonStatus: true });
+						VideoActions.addToPreviousChats(_this8.state.peerCuid, _this8.props.user.cuid);
 					} else {
-						VideoActions.addToPreviousChats(_this6.state.peerCuid, _this6.props.user.cuid, "null");
+						VideoActions.addToPreviousChats(_this8.state.peerCuid, _this8.props.user.cuid, "null");
 					}
 				}
 			});
@@ -1622,8 +1727,8 @@ var Video = function (_React$Component) {
 				_react2.default.createElement(
 					'div',
 					{ id: 'vid-container' },
-					_react2.default.createElement('video', { id: 'my-video', src: mySource, autoPlay: true }),
-					_react2.default.createElement('video', { id: 'other-video', src: otherSource, autoPlay: true }),
+					_react2.default.createElement('video', { id: 'my-video', src: this.state.waiting ? null : mySource, autoPlay: true }),
+					_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/img/static3.mp4' : otherSource, autoPlay: true, muted: this.state.waiting, loop: this.state.waiting }),
 					_react2.default.createElement(
 						'div',
 						{ id: 'left-button-container' },
@@ -1647,15 +1752,38 @@ var Video = function (_React$Component) {
 				),
 				_react2.default.createElement(
 					_Display2.default,
-					{ 'if': this.state.peerName && this.state.peerAge },
+					{ 'if': this.state.peerName && this.state.peerAge && !this.state.waiting },
 					_react2.default.createElement(
 						'div',
 						{ className: 'peer-name-wrapper' },
 						_react2.default.createElement(
 							'p',
-							null,
+							{ className: 'name-age' },
 							this.state.peerName + ", " + this.state.peerAge
+						),
+						_react2.default.createElement(
+							'p',
+							{ className: 'city' },
+							'New York, NY'
 						)
+					)
+				),
+				_react2.default.createElement(
+					_Display2.default,
+					{ 'if': this.state.streaming },
+					_react2.default.createElement(
+						_reactDelay2.default,
+						{ wait: 1000 },
+						_react2.default.createElement(_reactCountdownClockFork2.default, { seconds: 60, color: 'black', alpha: 0.9, onComplete: null, showMilliseconds: false })
+					)
+				),
+				_react2.default.createElement(
+					_Display2.default,
+					{ 'if': this.state.waiting },
+					_react2.default.createElement(
+						'h2',
+						{ id: 'wait-message' },
+						'Please wait to be matched'
 					)
 				),
 				_react2.default.createElement(
@@ -1680,7 +1808,7 @@ var Video = function (_React$Component) {
 
 exports.default = Video;
 
-},{"../actions/VideoActions":5,"../stores/VideoStore":20,"./Display":8,"global":28,"global/document":27,"global/window":28,"react":"react","react-bootstrap":139,"socket.io-client":313,"underscore":"underscore","window-or-global":360}],14:[function(require,module,exports){
+},{"../actions/VideoActions":5,"../stores/VideoStore":20,"./Display":8,"global":28,"global/document":27,"global/window":28,"react":"react","react-bootstrap":139,"react-countdown-clock-fork":313,"react-delay":314,"socket.io-client":315,"underscore":"underscore","window-or-global":362}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26415,6 +26543,134 @@ module.exports = warning;
 }).call(this,require('_process'))
 
 },{"_process":23}],313:[function(require,module,exports){
+!function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e(require("react")):"function"==typeof define&&define.amd?define(["react"],e):"object"==typeof exports?exports.ReactCountdownClock=e(require("react")):t.ReactCountdownClock=e(t.React)}(this,function(t){return function(t){function e(i){if(s[i])return s[i].exports;var n=s[i]={exports:{},id:i,loaded:!1};return t[i].call(n.exports,n,n.exports,e),n.loaded=!0,n.exports}var s={};return e.m=t,e.c=s,e.p="/build/",e(0)}([function(t,e,s){var i;i=s(1),t.exports=i.createClass({_seconds:0,_radius:null,_fraction:null,_content:null,_canvas:null,_timeoutIds:[],displayName:"ReactCountdownClock",propTypes:{seconds:i.PropTypes.number,size:i.PropTypes.number,weight:i.PropTypes.number,color:i.PropTypes.string,fontSize:i.PropTypes.string,font:i.PropTypes.string,alpha:i.PropTypes.number,timeFormat:i.PropTypes.string,onComplete:i.PropTypes.func,showMilliseconds:i.PropTypes.bool,restartOnNewProps:i.PropTypes.bool},getDefaultProps:function(){return{seconds:60,size:300,color:"#000",alpha:1,timeFormat:"hms",fontSize:"auto",font:"Arial",showMilliseconds:!0,restartOnNewProps:!0}},componentWillReceiveProps:function(t){if(this.props.restartOnNewProps)return this._seconds=t.seconds,this._setupTimer()},componentDidMount:function(){return this._seconds=this.props.seconds,this._setupTimer()},componentWillUnmount:function(){return this._cancelTimer()},_setupTimer:function(){return this._setScale(),this._setupCanvas(),this._drawTimer(),this._startTimer()},_updateCanvas:function(){return this._clearTimer(),this._drawTimer()},_setScale:function(){return this._radius=this.props.size/2,this._fraction=2/this._seconds,this._tickPeriod=this._calculateTick(),this._innerRadius=this.props.weight?this._radius-this.props.weight:this._radius/1.8},_calculateTick:function(){var t,e;return e=1.8,t=this._seconds*e,t>1e3?1e3:t},_setupCanvas:function(){return this._canvas=this.refs.canvas,this._context=this._canvas.getContext("2d"),this._context.textAlign="center",this._context.textBaseline="middle"},_startTimer:function(){return this._timeoutIds.push(setTimeout(function(t){return function(){return t._tick()}}(this),200))},_cancelTimer:function(){var t,e,s,i,n;for(s=this._timeoutIds,i=[],t=0,e=s.length;t<e;t++)n=s[t],i.push(clearTimeout(n));return i},_tick:function(){var t;return t=Date.now(),this._timeoutIds.push(setTimeout(function(e){return function(){var s;return s=(Date.now()-t)/2e3,e._seconds-=s,e._seconds<=0?(e._seconds=0,e._handleComplete(),e._clearTimer()):(e._updateCanvas(),e._tick())}}(this),this._tickPeriod))},_handleComplete:function(){if(this.props.onComplete)return this.props.onComplete()},_clearTimer:function(){return this._context.clearRect(0,0,this._canvas.width,this._canvas.height),this._drawBackground()},_drawBackground:function(){return this._context.beginPath(),this._context.globalAlpha=this.props.alpha/3,this._context.arc(this._radius,this._radius,this._radius,0,2*Math.PI,!1),this._context.arc(this._radius,this._radius,this._innerRadius,2*Math.PI,0,!0),this._context.fill()},_formattedTime:function(){var t,e,s,i,n,r;return t=null!=(i=this._seconds<=9.9&&this.props.showMilliseconds)?i:{1:0},"hms"===this.props.timeFormat?(e=parseInt(this._seconds/3600)%24,s=parseInt(this._seconds/60)%60,n=(this._seconds%60).toFixed(t),e<10&&(e="0"+e),s<10&&(s="0"+s),n<10&&s>=1&&(n="0"+n),r=[],e>0&&r.push(e),s>0&&r.push(s),r.push(n),r.join(":")):this._seconds.toFixed(t)},_fontSize:function(t){var e,s;return"auto"===this.props.fontSize?(e=function(){switch(t.length){case 8:return 4;case 5:return 3;default:return 2}}(),s=this._radius/e,s+"px"):this.props.fontSize},_drawTimer:function(){var t,e;return e=this._fraction*this._seconds+1.5,t=this._formattedTime(),this._context.globalAlpha=this.props.alpha,this._context.fillStyle=this.props.color,this._context.font="bold "+this._fontSize(t)+" "+this.props.font,this._context.fillText(t,this._radius,this._radius),this._context.beginPath(),this._context.arc(this._radius,this._radius,this._radius,1.5*Math.PI,Math.PI*e,!1),this._context.arc(this._radius,this._radius,this._innerRadius,Math.PI*e,1.5*Math.PI,!0),this._context.fill()},render:function(){return i.createElement("canvas",{ref:"canvas",className:"react-countdown-clock",width:this.props.size,height:this.props.size})}})},function(e,s){e.exports=t}])});
+
+},{"react":"react"}],314:[function(require,module,exports){
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory(require("react"));
+	else if(typeof define === 'function' && define.amd)
+		define(["react"], factory);
+	else if(typeof exports === 'object')
+		exports["Delay"] = factory(require("react"));
+	else
+		root["Delay"] = factory(root["react"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__) {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
+
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
+
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+
+
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var Delay = _react2['default'].createClass({
+
+	  displayName: 'Delay',
+
+	  propTypes: {
+	    wait: _react2['default'].PropTypes.number
+	  },
+
+	  getDefaultProps: function getDefaultProps() {
+	    return {
+	      wait: 250
+	    };
+	  },
+
+	  getInitialState: function getInitialState() {
+	    return {
+	      waiting: true
+	    };
+	  },
+
+	  componentDidMount: function componentDidMount() {
+	    var _this = this;
+
+	    this.timer = setTimeout(function () {
+	      _this.setState({
+	        waiting: false
+	      });
+	    }, this.props.wait);
+	  },
+
+	  componentWillUnmount: function componentWillUnmount() {
+	    clearTimeout(this.timer);
+	  },
+
+	  render: function render() {
+	    if (!this.state.waiting) {
+	      return this.props.children;
+	    }
+
+	    return null;
+	  }
+	});
+
+	exports['default'] = Delay;
+	module.exports = exports['default'];
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
+
+/***/ }
+/******/ ])
+});
+;
+},{"react":"react"}],315:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26508,7 +26764,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":314,"./socket":316,"./url":317,"debug":321,"socket.io-parser":354}],314:[function(require,module,exports){
+},{"./manager":316,"./socket":318,"./url":319,"debug":323,"socket.io-parser":356}],316:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -27067,7 +27323,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":315,"./socket":316,"backo2":318,"component-bind":319,"component-emitter":320,"debug":321,"engine.io-client":324,"indexof":351,"socket.io-parser":354}],315:[function(require,module,exports){
+},{"./on":317,"./socket":318,"backo2":320,"component-bind":321,"component-emitter":322,"debug":323,"engine.io-client":326,"indexof":353,"socket.io-parser":356}],317:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -27093,7 +27349,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],316:[function(require,module,exports){
+},{}],318:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -27507,7 +27763,7 @@ Socket.prototype.compress = function(compress){
   return this;
 };
 
-},{"./on":315,"component-bind":319,"component-emitter":320,"debug":321,"has-binary":349,"socket.io-parser":354,"to-array":359}],317:[function(require,module,exports){
+},{"./on":317,"component-bind":321,"component-emitter":322,"debug":323,"has-binary":351,"socket.io-parser":356,"to-array":361}],319:[function(require,module,exports){
 (function (global){
 
 /**
@@ -27588,7 +27844,7 @@ function url(uri, loc){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"debug":321,"parseuri":352}],318:[function(require,module,exports){
+},{"debug":323,"parseuri":354}],320:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -27675,7 +27931,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],319:[function(require,module,exports){
+},{}],321:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -27700,7 +27956,7 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],320:[function(require,module,exports){
+},{}],322:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -27863,7 +28119,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],321:[function(require,module,exports){
+},{}],323:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -28033,7 +28289,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-},{"./debug":322}],322:[function(require,module,exports){
+},{"./debug":324}],324:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -28232,7 +28488,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":323}],323:[function(require,module,exports){
+},{"ms":325}],325:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -28359,11 +28615,11 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],324:[function(require,module,exports){
+},{}],326:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":325}],325:[function(require,module,exports){
+},{"./lib/":327}],327:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -28375,7 +28631,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":326,"engine.io-parser":336}],326:[function(require,module,exports){
+},{"./socket":328,"engine.io-parser":338}],328:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -29108,7 +29364,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./transport":327,"./transports":328,"component-emitter":334,"debug":321,"engine.io-parser":336,"indexof":351,"parsejson":346,"parseqs":347,"parseuri":352}],327:[function(require,module,exports){
+},{"./transport":329,"./transports":330,"component-emitter":336,"debug":323,"engine.io-parser":338,"indexof":353,"parsejson":348,"parseqs":349,"parseuri":354}],329:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -29265,7 +29521,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":334,"engine.io-parser":336}],328:[function(require,module,exports){
+},{"component-emitter":336,"engine.io-parser":338}],330:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -29323,7 +29579,7 @@ function polling(opts){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./polling-jsonp":329,"./polling-xhr":330,"./websocket":332,"xmlhttprequest-ssl":333}],329:[function(require,module,exports){
+},{"./polling-jsonp":331,"./polling-xhr":332,"./websocket":334,"xmlhttprequest-ssl":335}],331:[function(require,module,exports){
 (function (global){
 
 /**
@@ -29566,7 +29822,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./polling":331,"component-inherit":335}],330:[function(require,module,exports){
+},{"./polling":333,"component-inherit":337}],332:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -29983,7 +30239,7 @@ function unloadHandler() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./polling":331,"component-emitter":334,"component-inherit":335,"debug":321,"xmlhttprequest-ssl":333}],331:[function(require,module,exports){
+},{"./polling":333,"component-emitter":336,"component-inherit":337,"debug":323,"xmlhttprequest-ssl":335}],333:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -30232,7 +30488,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":327,"component-inherit":335,"debug":321,"engine.io-parser":336,"parseqs":347,"xmlhttprequest-ssl":333,"yeast":348}],332:[function(require,module,exports){
+},{"../transport":329,"component-inherit":337,"debug":323,"engine.io-parser":338,"parseqs":349,"xmlhttprequest-ssl":335,"yeast":350}],334:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -30525,7 +30781,7 @@ WS.prototype.check = function(){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../transport":327,"component-inherit":335,"debug":321,"engine.io-parser":336,"parseqs":347,"ws":21,"yeast":348}],333:[function(require,module,exports){
+},{"../transport":329,"component-inherit":337,"debug":323,"engine.io-parser":338,"parseqs":349,"ws":21,"yeast":350}],335:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -30563,7 +30819,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":345}],334:[function(require,module,exports){
+},{"has-cors":347}],336:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -30729,7 +30985,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],335:[function(require,module,exports){
+},{}],337:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -30737,7 +30993,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],336:[function(require,module,exports){
+},{}],338:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -31336,7 +31592,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./keys":337,"after":338,"arraybuffer.slice":339,"base64-arraybuffer":340,"blob":341,"has-binary":342,"utf8":344}],337:[function(require,module,exports){
+},{"./keys":339,"after":340,"arraybuffer.slice":341,"base64-arraybuffer":342,"blob":343,"has-binary":344,"utf8":346}],339:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -31357,7 +31613,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],338:[function(require,module,exports){
+},{}],340:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -31387,7 +31643,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],339:[function(require,module,exports){
+},{}],341:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -31418,7 +31674,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],340:[function(require,module,exports){
+},{}],342:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -31479,7 +31735,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],341:[function(require,module,exports){
+},{}],343:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -31580,7 +31836,7 @@ module.exports = (function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],342:[function(require,module,exports){
+},{}],344:[function(require,module,exports){
 (function (global){
 
 /*
@@ -31643,12 +31899,12 @@ function hasBinary(data) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"isarray":343}],343:[function(require,module,exports){
+},{"isarray":345}],345:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],344:[function(require,module,exports){
+},{}],346:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -31897,7 +32153,7 @@ module.exports = Array.isArray || function (arr) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],345:[function(require,module,exports){
+},{}],347:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -31916,7 +32172,7 @@ try {
   module.exports = false;
 }
 
-},{}],346:[function(require,module,exports){
+},{}],348:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -31952,7 +32208,7 @@ module.exports = function parsejson(data) {
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],347:[function(require,module,exports){
+},{}],349:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -31991,7 +32247,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],348:[function(require,module,exports){
+},{}],350:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -32061,7 +32317,7 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}],349:[function(require,module,exports){
+},{}],351:[function(require,module,exports){
 (function (global){
 
 /*
@@ -32125,9 +32381,9 @@ function hasBinary(data) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"isarray":350}],350:[function(require,module,exports){
-arguments[4][343][0].apply(exports,arguments)
-},{"dup":343}],351:[function(require,module,exports){
+},{"isarray":352}],352:[function(require,module,exports){
+arguments[4][345][0].apply(exports,arguments)
+},{"dup":345}],353:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -32138,7 +32394,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],352:[function(require,module,exports){
+},{}],354:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -32179,7 +32435,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],353:[function(require,module,exports){
+},{}],355:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -32325,7 +32581,7 @@ exports.removeBlobs = function(data, callback) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./is-buffer":355,"isarray":357}],354:[function(require,module,exports){
+},{"./is-buffer":357,"isarray":359}],356:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -32727,7 +32983,7 @@ function error(data){
   };
 }
 
-},{"./binary":353,"./is-buffer":355,"component-emitter":356,"debug":321,"isarray":357,"json3":358}],355:[function(require,module,exports){
+},{"./binary":355,"./is-buffer":357,"component-emitter":358,"debug":323,"isarray":359,"json3":360}],357:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -32745,11 +33001,11 @@ function isBuf(obj) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],356:[function(require,module,exports){
-arguments[4][334][0].apply(exports,arguments)
-},{"dup":334}],357:[function(require,module,exports){
-arguments[4][343][0].apply(exports,arguments)
-},{"dup":343}],358:[function(require,module,exports){
+},{}],358:[function(require,module,exports){
+arguments[4][336][0].apply(exports,arguments)
+},{"dup":336}],359:[function(require,module,exports){
+arguments[4][345][0].apply(exports,arguments)
+},{"dup":345}],360:[function(require,module,exports){
 (function (global){
 /*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
 ;(function () {
@@ -33656,7 +33912,7 @@ arguments[4][343][0].apply(exports,arguments)
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],359:[function(require,module,exports){
+},{}],361:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -33671,7 +33927,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],360:[function(require,module,exports){
+},{}],362:[function(require,module,exports){
 (function (global){
 'use strict'
 module.exports = (typeof self === 'object' && self.self === self && self) ||

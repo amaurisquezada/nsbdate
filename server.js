@@ -290,29 +290,20 @@ app.use('/connect', ExpressPeerServer(server, options));
 var io = require('socket.io')(server);
 
 io.sockets.on('connection', function(socket){
-  connectedUsers.push(socket)
 
 socket.on('disconnect', function(){
   var id = this.id,
   clientId = id.substring(2),
   cuid = this.cuid
+  console.log(this.gender, "before conditional")
   if (this.gender == "male"){
-    allConnectedMen = _.reject(allConnectedMen, function(el) { return el.socket === id; });
-    menSeekingWomen = _.reject(menSeekingWomen, function(el) { return el.socket === id; });
-    console.log(allConnectedMen, "ACM after disconnect")
-    console.log(menSeekingWomen, "MSW after disconnect")
+    allConnectedMen = _.reject(allConnectedMen, function(el) { return el.cuid === cuid; });
+    menSeekingWomen = _.reject(menSeekingWomen, function(el) { return el.cuid === cuid; });
     io.to('femaleRoom').emit("usersChange", cuid)
-  } else {
-    allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.socket === id; });
-    womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.socket === id; });
-    console.log(allConnectedWomen, "ACW after disconnect")
-    console.log(womenSeekingMen, "WSM after disconnect")
+  } else if (this.gender == "female") {
+    allConnectedWomen = _.reject(allConnectedWomen, function(el) { return el.peerCuid === cuid; });
+    womenSeekingMen = _.reject(womenSeekingMen, function(el) { return el.peerCuid === cuid; });
     io.to("maleRoom").emit('usersChange', cuid)
-  }
-  
-  connectedUsers.pop();
-  if (connectedUsers.length < 1){
-    womenSeekingMen = [];
   }
 })
 
@@ -324,7 +315,7 @@ socket.on('joinRoom', function(user){
   } else {
     this.gender = "male"
     this.cuid = user.cuid
-    this.join('femaleRoom')
+    this.join('maleRoom')
   }
 })
 

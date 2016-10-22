@@ -46,7 +46,7 @@ export class App extends React.Component {
 
     return (
     	<div className="container main-div">
-    		<h1 id="site-header">NSB Date</h1>
+    		<h1 id="site-header">N<span className="header2">ot</span>S<span className="header2">o</span>B<span className="header2">lind</span>DATE</h1>
         {childrenWithProps}
       </div>
     )
