@@ -390,7 +390,7 @@ export default class Video extends React.Component {
 				<div id="vid-container">
 					<video id='my-video' src={this.state.waiting ? null : mySource} autoPlay >
 					</video>
-					<video id='other-video' src={this.state.waiting ? '/img/static3.mp4' : otherSource} autoPlay muted={this.state.waiting} loop={this.state.waiting}>
+					<video id='other-video' src={this.state.waiting ? '/videos/static3.mp4' : otherSource} autoPlay muted={this.state.waiting} loop={this.state.waiting}>
 					</video>
 					<div id="left-button-container">
             <p className="arrow-labels">Not for me</p>
