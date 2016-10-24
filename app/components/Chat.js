@@ -6,6 +6,7 @@ import Display from './Display'
 import NavBar from './NavBar'
 import ChatStore from '../stores/ChatStore'
 import * as ChatActions from '../actions/ChatActions'
+import * as NavActions from '../actions/NavActions'
 
 export default class Chat extends React.Component {
 
@@ -54,6 +55,7 @@ export default class Chat extends React.Component {
             currentConvo = this.state.currentConvo;
 	  	this.socket.emit('subscribe', this.props.user._id)
       this.socket.emit('updateUserLastClick', this.props.user._id)
+      NavActions.clearNotifications()
 	  	let newState = {}
 	  	for (let i in convos) {
 	  		let convoId = convos[i]._id,
@@ -76,6 +78,7 @@ export default class Chat extends React.Component {
   	this.socket.close()
   	clearTimeout(this.timer1)
   	ChatStore.removeAllListeners()
+    this.socket.removeAllListeners()
   }
 
   componentWillUpdate() {
@@ -101,6 +104,7 @@ export default class Chat extends React.Component {
   	      inputText = this.refs.form.value;
   	this.socket.emit('newMessage', {text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id, recipient: recipient})
     this.socket.emit('updateUserLastClick', this.props.user._id)
+    NavActions.clearNotifications()
   	this.refs.form.value = ""
   	this.setState({input: ""})
   } 
@@ -125,6 +129,7 @@ export default class Chat extends React.Component {
 
   onMatchClick(match, e) {
     this.socket.emit('updateUserLastClick', this.props.user._id)
+    NavActions.clearNotifications()
   	let update = {}
   	update.lastConvo = match._id
   	update.convoStatuses = this.state.convoStatuses

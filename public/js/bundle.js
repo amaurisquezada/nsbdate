@@ -327,6 +327,10 @@ var _ChatActions = require('../actions/ChatActions');
 
 var ChatActions = _interopRequireWildcard(_ChatActions);
 
+var _NavActions = require('../actions/NavActions');
+
+var NavActions = _interopRequireWildcard(_NavActions);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -396,6 +400,7 @@ var Chat = function (_React$Component) {
             currentConvo = _this3.state.currentConvo;
         _this3.socket.emit('subscribe', _this3.props.user._id);
         _this3.socket.emit('updateUserLastClick', _this3.props.user._id);
+        NavActions.clearNotifications();
         var newState = {};
         for (var i in convos) {
           var convoId = convos[i]._id,
@@ -419,6 +424,7 @@ var Chat = function (_React$Component) {
       this.socket.close();
       clearTimeout(this.timer1);
       _ChatStore2.default.removeAllListeners();
+      this.socket.removeAllListeners();
     }
   }, {
     key: 'componentWillUpdate',
@@ -448,6 +454,7 @@ var Chat = function (_React$Component) {
           inputText = this.refs.form.value;
       this.socket.emit('newMessage', { text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id, recipient: recipient });
       this.socket.emit('updateUserLastClick', this.props.user._id);
+      NavActions.clearNotifications();
       this.refs.form.value = "";
       this.setState({ input: "" });
     }
@@ -475,6 +482,7 @@ var Chat = function (_React$Component) {
     key: 'onMatchClick',
     value: function onMatchClick(match, e) {
       this.socket.emit('updateUserLastClick', this.props.user._id);
+      NavActions.clearNotifications();
       var update = {};
       update.lastConvo = match._id;
       update.convoStatuses = this.state.convoStatuses;
@@ -596,7 +604,7 @@ var Chat = function (_React$Component) {
 
 exports.default = Chat;
 
-},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"./NavBar":10,"moment":47,"react":"react","react-dom":"react-dom","socket.io-client":313}],8:[function(require,module,exports){
+},{"../actions/ChatActions":2,"../actions/NavActions":3,"../stores/ChatStore":18,"./Display":8,"./NavBar":10,"moment":47,"react":"react","react-dom":"react-dom","socket.io-client":313}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1096,6 +1104,7 @@ var User = exports.User = function (_React$Component) {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
       _UserStore2.default.removeAllListeners();
+      this.socket.removeAllListeners();
       this.socket.disconnect();
     }
   }, {
@@ -1367,7 +1376,6 @@ var Video = function (_React$Component) {
 			this.socket.on('idRetrieval', this.idRetrieval);
 			this.socket.on('noEligibleUsers', this.noEligibleUsers);
 			this.socket.on('startTimer', this.outOfTime);
-			this.socket.on('newMatch', this.newMatch);
 			_VideoStore2.default.on('change', this.nextMatch);
 			_VideoStore2.default.on('initial', function () {
 				_this2.setState({ previousChats: _VideoStore2.default.getPreviousChats() });
@@ -1384,6 +1392,7 @@ var Video = function (_React$Component) {
 			this.peer.destroy();
 			this.socket.disconnect();
 			_VideoStore2.default.removeAllListeners();
+			this.socket.removeAllListeners();
 			clearInterval(this.countdown);
 		}
 	}, {

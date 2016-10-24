@@ -5,7 +5,7 @@ class VideoStore extends EventEmitter {
   constructor() {
     super()
     this.previousChats = []
-}
+  }
 
   cuidAddedToPc(pc, event) {
     this.previousChats = pc
@@ -31,9 +31,8 @@ class VideoStore extends EventEmitter {
       }
     }
   }
-
 }
 
-const videoStore = new VideoStore;
+const videoStore = new VideoStore
 dispatcher.register(videoStore.handleActions.bind(videoStore))
 export default videoStore;

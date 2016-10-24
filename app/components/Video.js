@@ -66,7 +66,6 @@ export default class Video extends React.Component {
 		this.socket.on('idRetrieval', this.idRetrieval)
 		this.socket.on('noEligibleUsers', this.noEligibleUsers)
 		this.socket.on('startTimer', this.outOfTime)
-		this.socket.on('newMatch', this.newMatch)
   	VideoStore.on('change', this.nextMatch)
   	VideoStore.on('initial', () => {
   		this.setState({previousChats: VideoStore.getPreviousChats()})
@@ -81,6 +80,7 @@ export default class Video extends React.Component {
 		this.peer.destroy()
 		this.socket.disconnect()
 		VideoStore.removeAllListeners()
+    this.socket.removeAllListeners()
    	clearInterval(this.countdown)
 	}
 

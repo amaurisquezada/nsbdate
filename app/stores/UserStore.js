@@ -5,7 +5,7 @@ class UserStore extends EventEmitter {
   constructor() {
     super()
     this.user = []
-}
+  }
 
   currentUser(user) {
    this.user = user
@@ -48,9 +48,8 @@ class UserStore extends EventEmitter {
       }
     }
   }
-
 }
 
-const userStore = new UserStore;
+const userStore = new UserStore
 dispatcher.register(userStore.handleActions.bind(userStore))
 export default userStore;

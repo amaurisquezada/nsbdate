@@ -8,7 +8,7 @@ class ChatStore extends EventEmitter {
     this.lastConvo = '',
     this.lastClicked = '',
     this.currentConvo = {}
-}
+  }
 
   allConvos(convos) {
    this.convos = convos
@@ -39,7 +39,6 @@ class ChatStore extends EventEmitter {
   getLastClicked() {
     return this.lastClicked
   }
-
   
   handleActions(action) {
     switch(action.type) {
@@ -51,9 +50,8 @@ class ChatStore extends EventEmitter {
       }
     }
   }
-
 }
 
-const chatStore = new ChatStore;
+const chatStore = new ChatStore
 dispatcher.register(chatStore.handleActions.bind(chatStore))
 export default chatStore;

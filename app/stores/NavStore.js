@@ -5,7 +5,7 @@ class NavStore extends EventEmitter {
   constructor() {
     super()
     this.notifications = 0
-}
+  }
 
   getNotifications() {
     return this.notifications
@@ -26,9 +26,8 @@ class NavStore extends EventEmitter {
       }
     }
   }
-
 }
 
-const navStore = new NavStore;
+const navStore = new NavStore
 dispatcher.register(navStore.handleActions.bind(navStore))
 export default navStore;

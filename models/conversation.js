@@ -10,10 +10,7 @@ var convoSchema = new Schema({
   femaleFn: {type: String},
   user2: {type : mongoose.Schema.ObjectId, ref : 'User'},
   maleFn: {type: String},
-  dateCreated: {
-              type: Date,
-              default: Date.now
-            }
+  dateCreated: {type: Date, default: Date.now}
 });
 
 module.exports = mongoose.model('Conversation', convoSchema);

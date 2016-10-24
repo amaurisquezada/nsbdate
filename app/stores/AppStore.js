@@ -1,11 +1,11 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'events'
 import dispatcher from '../dispatcher'
 
 class AppStore extends EventEmitter {
   constructor() {
     super()
     this.user = []
-}
+  }
 
   currentUser(user) {
    this.user = user
@@ -15,7 +15,6 @@ class AppStore extends EventEmitter {
   getUser() {
     return this.user
   }
-
 
   signout() {
     this.user = []
@@ -31,9 +30,8 @@ class AppStore extends EventEmitter {
       }
     }
   }
-
 }
 
-const appStore = new AppStore;
+const appStore = new AppStore
 dispatcher.register(appStore.handleActions.bind(appStore))
 export default appStore;

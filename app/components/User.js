@@ -45,6 +45,7 @@ export class User extends React.Component {
 
   componentWillUnmount() {
     UserStore.removeAllListeners()
+    this.socket.removeAllListeners()
     this.socket.disconnect()
   }
 
