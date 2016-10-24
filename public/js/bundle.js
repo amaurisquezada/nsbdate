@@ -71,24 +71,38 @@ function getLastConvo() {
   });
 }
 
-// export function addMessageToConversation(convoId, authorId, text) {
-//   $.ajax({
-//     type: 'PUT',
-//     url: '/api/amtc' ,
-//     data: {convoId, authorId, text}
-//   })
-//     .done((data) => {
-//       dispatcher.dispatch({
-//         type: "ADD_TO_CURRENT_CONVO",
-//         currentConvo: data
-//       })
-//     })
-//     .fail((err) => {
-//       console.log(err);
-//     })
-// }
-
 },{"../dispatcher":14}],3:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getNotifications = getNotifications;
+exports.clearNotifications = clearNotifications;
+
+var _dispatcher = require('../dispatcher');
+
+var _dispatcher2 = _interopRequireDefault(_dispatcher);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function getNotifications(user) {
+  $.ajax({ url: '/api/get-notifications', data: user }).done(function (data) {
+    _dispatcher2.default.dispatch({
+      type: "CHAT_NOTIFICATIONS",
+      notifications: data
+    });
+  });
+}
+
+function clearNotifications() {
+  _dispatcher2.default.dispatch({
+    type: "CLEAR_NOTIFICATIONS",
+    notifitcations: { amount: 0 }
+  });
+}
+
+},{"../dispatcher":14}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -107,69 +121,8 @@ function updateNewUser(data) {
     type: 'PUT',
     url: '/api/user/:id',
     data: data
-  }).done(function () {
-    console.log(data);
-  }).fail(function (err) {
+  }).done(function () {}).fail(function (err) {
     console.log(err);
-  });
-}
-
-},{"../dispatcher":14}],4:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.createUser = createUser;
-exports.deleteUser = deleteUser;
-exports.receiveUsers = receiveUsers;
-exports.currentUser = currentUser;
-exports.signout = signout;
-
-var _dispatcher = require("../dispatcher");
-
-var _dispatcher2 = _interopRequireDefault(_dispatcher);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function createUser(firstName) {
-  _dispatcher2.default.dispatch({
-    type: "CREATE_USER",
-    firstName: firstName
-  });
-}
-
-function deleteUser(id) {
-  _dispatcher2.default.dispatch({
-    type: "DELETE_USER",
-    id: id
-  });
-}
-
-function receiveUsers() {
-  $.ajax({ url: '/api/users' }).done(function (data) {
-    _dispatcher2.default.dispatch({
-      type: "RECEIVE_USERS",
-      users: data
-    });
-  });
-}
-
-function currentUser() {
-  $.ajax({ url: '/api/currentUser' }).done(function (data) {
-    _dispatcher2.default.dispatch({
-      type: "CURRENT_USER",
-      currentUser: data
-    });
-  });
-}
-
-function signout() {
-  $.ajax({
-    url: '/api/signout',
-    type: 'POST'
-  }).done(function (data) {
-    _dispatcher2.default.dispatch({ type: "SIGN_OUT" });
   });
 }
 
@@ -187,29 +140,6 @@ var _dispatcher = require('../dispatcher');
 var _dispatcher2 = _interopRequireDefault(_dispatcher);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// export function getWomanId() {
-//     $.ajax({ url: '/api/get-woman-id'})
-//       .done((data) => {
-//         dispatcher.dispatch({
-//          type: "GET_WOMAN_ID",
-//          womanId: data
-//          })
-//       })
-// }
-
-// export function addPeerIdToWsm(cuid) {
-//     $.ajax({
-//             url: '/api/wsm',
-//             type: 'POST',
-//             data: { cuid }
-//          })
-//       .done((data) => {
-//         dispatcher.dispatch({
-//          type: "ADD_PEER_TO_WSM"
-//          })
-//       })
-// }
 
 function addToPreviousChats(id, myId) {
   var event = arguments.length <= 2 || arguments[2] === undefined ? "change" : arguments[2];
@@ -291,7 +221,6 @@ var App = exports.App = function (_React$Component) {
     value: function componentDidMount() {
       if (!this.state.user.cuid) {
         this.receiveUser(localStorage.user);
-        console.log(localStorage.user, "from app mount");
       }
     }
   }, {
@@ -386,9 +315,9 @@ var _Display = require('./Display');
 
 var _Display2 = _interopRequireDefault(_Display);
 
-var _Nav = require('./Nav1');
+var _NavBar = require('./NavBar');
 
-var _Nav2 = _interopRequireDefault(_Nav);
+var _NavBar2 = _interopRequireDefault(_NavBar);
 
 var _ChatStore = require('../stores/ChatStore');
 
@@ -456,15 +385,17 @@ var Chat = function (_React$Component) {
     value: function componentDidMount() {
       var _this3 = this;
 
+      _reactDom2.default.findDOMNode(this.refs.form).focus();
       this.socket = (0, _socket2.default)();
       this.socket.on('updateMessages', this.updateMessages);
       this.socket.on('updatedConvo', this.updateCurrentConvo);
       ChatActions.getConvos();
       ChatActions.getLastConvo();
       this.timer1 = setTimeout(function () {
-        var convos = _this3.state.convos;
-        var currentConvo = _this3.state.currentConvo;
+        var convos = _this3.state.convos,
+            currentConvo = _this3.state.currentConvo;
         _this3.socket.emit('subscribe', _this3.props.user._id);
+        _this3.socket.emit('updateUserLastClick', _this3.props.user._id);
         var newState = {};
         for (var i in convos) {
           var convoId = convos[i]._id,
@@ -473,7 +404,6 @@ var Chat = function (_React$Component) {
           }),
               lastMessageDate = lastMessage ? (0, _moment2.default)(lastMessage.dateCreated).valueOf() : (0, _moment2.default)(convos[i].dateCreated).valueOf(),
               lastConvoClick = convos[i].lastClicked[_this3.props.user._id];
-          console.log(lastMessage, "from lm fixer");
           newState[convoId] = lastMessageDate > lastConvoClick && convoId != currentConvo._id ? true : false;
           _this3.socket.emit('subscribe', convos[i]._id);
           if (convoId == currentConvo._id) {
@@ -514,8 +444,10 @@ var Chat = function (_React$Component) {
     key: 'onSubmit',
     value: function onSubmit(e) {
       e.preventDefault();
-      var inputText = this.refs.form.value;
-      this.socket.emit('newMessage', { text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id });
+      var recipient = this.props.user.gender === "Female" ? this.state.currentConvo.user2 : this.state.currentConvo.user1,
+          inputText = this.refs.form.value;
+      this.socket.emit('newMessage', { text: inputText, authorId: this.props.user._id, convoId: this.state.currentConvo._id, recipient: recipient });
+      this.socket.emit('updateUserLastClick', this.props.user._id);
       this.refs.form.value = "";
       this.setState({ input: "" });
     }
@@ -526,17 +458,10 @@ var Chat = function (_React$Component) {
         this.setState({
           currentConvo: payload
         });
-        console.log(payload, "from updateMessages");
       } else {
         ChatActions.getConvos();
-        var matchId = payload._id;
-        // let convos = this.state.convos
-        // for (var i in convos) {
-        // 	if (convos[i]._id == matchId) {
-        // 		convos[i]._id = payload
-        // 	}
-        // }
-        var convosState = this.state.convoStatuses;
+        var matchId = payload._id,
+            convosState = this.state.convoStatuses;
         convosState[matchId] = true;
         this.setState({ convoStatuses: convosState });
       }
@@ -549,24 +474,23 @@ var Chat = function (_React$Component) {
   }, {
     key: 'onMatchClick',
     value: function onMatchClick(match, e) {
+      this.socket.emit('updateUserLastClick', this.props.user._id);
       var update = {};
-      // update.currentConvo = match
-      // update.currentConvo.lastClicked = {}
-      // update.currentConvo.lastClicked[this.props.user._id] = Date.now()
       update.lastConvo = match._id;
       update.convoStatuses = this.state.convoStatuses;
       update.convoStatuses[match._id] = false;
       this.setState(update);
       this.socket.emit("setLastConvo", { userId: this.props.user._id, lastConvo: { _id: match._id, lastClicked: Date.now() } });
+      _reactDom2.default.findDOMNode(this.refs.form).focus();
     }
   }, {
     key: 'render',
     value: function render() {
       var _this4 = this;
 
-      var currentUserId = this.props.user._id;
-      var convos = this.state.convos;
-      var convosList = convos.map(function (match, i) {
+      var currentUserId = this.props.user._id,
+          convos = this.state.convos,
+          convosList = convos.length > 0 ? convos.map(function (match, i) {
         var boundMatchClick = _this4.onMatchClick.bind(_this4, match);
         var matchId = match._id;
         var divClass = _this4.state.lastConvo == matchId ? "matches active" : "matches regular";
@@ -580,40 +504,65 @@ var Chat = function (_React$Component) {
             currentUserId == match.user1 ? match.maleFn : match.femaleFn
           )
         );
-      });
-
-      var messageList = this.state.currentConvo && this.state.currentConvo.messages ? this.state.currentConvo.messages.map(function (message, i) {
-        var timeDisplay = void 0;
-        if ((0, _moment2.default)().diff(message.dateCreated, 'days') < 1) {
-          timeDisplay = (0, _moment2.default)(message.dateCreated).format("h:mm a");
-        } else if ((0, _moment2.default)().diff(message.dateCreated, 'days') == 1) {
-          timeDisplay = (0, _moment2.default)(message.dateCreated).format("[Yesterday at] h:mm a");
-        } else if ((0, _moment2.default)().diff(message.dateCreated, 'days') < 7) {
-          timeDisplay = (0, _moment2.default)(message.dateCreated).format("dddd [at] h:mm a");
-        } else {
-          timeDisplay = (0, _moment2.default)(message.dateCreated).format("MM/DD/YYYY [at] h:mm a");
-        }
-
-        return _react2.default.createElement(
+      }) : _react2.default.createElement(
+        'div',
+        { className: 'no-matches' },
+        _react2.default.createElement(
+          'p',
+          null,
+          'No matches yet. Go to the video chat and start matching now!'
+        )
+      );
+      var messageList = void 0,
+          messageClass = void 0;
+      if (this.state.currentConvo && this.state.currentConvo.messages && this.state.currentConvo.messages.length > 0) {
+        messageList = this.state.currentConvo.messages.map(function (message, i) {
+          messageClass = "message-container";
+          var timeDisplay = void 0;
+          if ((0, _moment2.default)().diff(message.dateCreated, 'days') < 1) {
+            timeDisplay = (0, _moment2.default)(message.dateCreated).format("h:mm a");
+          } else if ((0, _moment2.default)().diff(message.dateCreated, 'days') == 1) {
+            timeDisplay = (0, _moment2.default)(message.dateCreated).format("[Yesterday at] h:mm a");
+          } else if ((0, _moment2.default)().diff(message.dateCreated, 'days') < 7) {
+            timeDisplay = (0, _moment2.default)(message.dateCreated).format("dddd [at] h:mm a");
+          } else {
+            timeDisplay = (0, _moment2.default)(message.dateCreated).format("MM/DD/YYYY [at] h:mm a");
+          }
+          return _react2.default.createElement(
+            'div',
+            { className: message.user == _this4.props.user._id ? "my-messages" : "other-messages", key: i },
+            _react2.default.createElement(
+              'p',
+              { className: 'text-messages' },
+              message.text
+            ),
+            _react2.default.createElement(
+              'p',
+              { className: 'timestamps' },
+              timeDisplay
+            )
+          );
+        });
+      } else if (this.state.currentConvo && this.state.currentConvo.messages) {
+        messageClass = "message-container prompt-background";
+        messageList = _react2.default.createElement(
           'div',
-          { className: message.user == _this4.props.user._id ? "my-messages" : "other-messages", key: i },
+          { className: 'no-messages-yet' },
           _react2.default.createElement(
             'p',
-            { className: 'text-messages' },
-            message.text
-          ),
-          _react2.default.createElement(
-            'p',
-            { className: 'timestamps' },
-            timeDisplay
+            null,
+            'Don\'t be shy...say hello!'
           )
         );
-      }) : null;
+      } else {
+        messageClass = "message-container chat-background";
+        messageList = _react2.default.createElement('div', { className: 'no-matches-messages' });
+      }
       var buttonColor = !this.state.input || !this.state.currentConvo ? { color: "grey" } : { color: "black" };
       return _react2.default.createElement(
         'div',
         { className: 'container' },
-        _react2.default.createElement(_Nav2.default, null),
+        _react2.default.createElement(_NavBar2.default, { clear: true }),
         _react2.default.createElement(
           'div',
           { id: 'chat-container' },
@@ -624,7 +573,7 @@ var Chat = function (_React$Component) {
           ),
           _react2.default.createElement(
             'div',
-            { id: 'message-container' },
+            { className: messageClass },
             _react2.default.createElement(
               'form',
               { id: 'text-form', onSubmit: this.onSubmit },
@@ -644,15 +593,10 @@ var Chat = function (_React$Component) {
 
   return Chat;
 }(_react2.default.Component);
-// <h1 onClick={this.convoTrigger}>"Hello World"</h1>
-// 	<Display if={this.state.grabbed}>
-// 		{namesList}
-// 	</Display>
-
 
 exports.default = Chat;
 
-},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"./Nav1":10,"moment":47,"react":"react","react-dom":"react-dom","socket.io-client":315}],8:[function(require,module,exports){
+},{"../actions/ChatActions":2,"../stores/ChatStore":18,"./Display":8,"./NavBar":10,"moment":47,"react":"react","react-dom":"react-dom","socket.io-client":313}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -699,7 +643,7 @@ var Display = function (_React$Component) {
 exports.default = Display;
 
 },{"react":"react"}],9:[function(require,module,exports){
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -708,17 +652,9 @@ exports.Login = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _react = require('react');
+var _react = require("react");
 
 var _react2 = _interopRequireDefault(_react);
-
-var _reactBootstrap = require('react-bootstrap');
-
-var _AppActions = require('../actions/AppActions');
-
-var AppActions = _interopRequireWildcard(_AppActions);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -738,28 +674,28 @@ var Login = exports.Login = function (_React$Component) {
   }
 
   _createClass(Login, [{
-    key: 'render',
+    key: "render",
     value: function render() {
       return _react2.default.createElement(
-        'div',
-        { id: 'login-page' },
+        "div",
+        { id: "login-page" },
         _react2.default.createElement(
-          'div',
-          { id: 'login-container' },
+          "div",
+          { id: "login-container" },
           _react2.default.createElement(
-            'h2',
+            "h2",
             null,
-            'Welcome to NSB Date'
+            "Welcome to NSB Date"
           ),
           _react2.default.createElement(
-            'p',
+            "p",
             null,
-            'Real-time dating app for the modern skeptic'
+            "Real-time dating app for the modern skeptic"
           ),
           _react2.default.createElement(
-            'a',
-            { href: 'http://localhost:3000/login/facebook', className: 'btn btn-primary' },
-            'Sign-in/Sign up with Facebook'
+            "a",
+            { href: "http://localhost:3000/login/facebook", className: "btn btn-primary" },
+            "Sign-in/Sign up with Facebook"
           )
         )
       );
@@ -771,7 +707,7 @@ var Login = exports.Login = function (_React$Component) {
 
 exports.default = Login;
 
-},{"../actions/AppActions":1,"react":"react","react-bootstrap":139}],10:[function(require,module,exports){
+},{"react":"react"}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -796,6 +732,10 @@ var _ChatActions = require('../actions/ChatActions');
 
 var ChatActions = _interopRequireWildcard(_ChatActions);
 
+var _NavStore = require('../stores/NavStore');
+
+var _NavStore2 = _interopRequireDefault(_NavStore);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -806,22 +746,39 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var Nav1 = function (_React$Component) {
-  _inherits(Nav1, _React$Component);
+var NavBar = function (_React$Component) {
+  _inherits(NavBar, _React$Component);
 
-  function Nav1() {
-    var _this;
+  function NavBar() {
+    _classCallCheck(this, NavBar);
 
-    _classCallCheck(this, Nav1);
-
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Nav1).call(this));
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(NavBar).call(this));
 
     _this.signout = _this.signout.bind(_this);
     _this.chatData = _this.chatData.bind(_this);
-    return _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Nav1).call(this));
+    _this.state = {
+      notifications: _NavStore2.default.getNotifications()
+    };
+    return _this;
   }
 
-  _createClass(Nav1, [{
+  _createClass(NavBar, [{
+    key: 'componentWillMount',
+    value: function componentWillMount() {
+      var _this2 = this;
+
+      _NavStore2.default.on('change', function () {
+        _this2.setState({
+          notifications: _NavStore2.default.getNotifications()
+        });
+      });
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      _NavStore2.default.removeAllListeners();
+    }
+  }, {
     key: 'chatData',
     value: function chatData() {
       ChatActions.getConvos();
@@ -835,6 +792,8 @@ var Nav1 = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
+      var badgeClass = this.state.notifications > 0 && !this.props.clear ? "label label-default label-as-badge" : "hidden",
+          accountClass = this.state.notifications > 0 && !this.props.clear ? "btn btn-default nav-buttons adjustment" : "btn btn-default nav-buttons";
       return _react2.default.createElement(
         _reactBootstrap.Nav,
         { bsStyle: 'tabs', activeKey: 1 },
@@ -845,12 +804,12 @@ var Nav1 = function (_React$Component) {
         ),
         _react2.default.createElement(
           _reactRouter.Link,
-          { className: 'btn btn-default nav-buttons', onClick: this.chatData, eventKey: 2, to: '/mychats' },
+          { className: accountClass, onClick: this.chatData, eventKey: 2, to: '/mychats' },
           'My Chats',
           _react2.default.createElement(
             'span',
-            { className: 'badge' },
-            '10'
+            { className: badgeClass },
+            this.props.clear ? 0 : this.state.notifications
           )
         ),
         _react2.default.createElement(
@@ -867,12 +826,12 @@ var Nav1 = function (_React$Component) {
     }
   }]);
 
-  return Nav1;
+  return NavBar;
 }(_react2.default.Component);
 
-exports.default = Nav1;
+exports.default = NavBar;
 
-},{"../actions/AppActions":1,"../actions/ChatActions":2,"react":"react","react-bootstrap":139,"react-router":"react-router"}],11:[function(require,module,exports){
+},{"../actions/AppActions":1,"../actions/ChatActions":2,"../stores/NavStore":19,"react":"react","react-bootstrap":139,"react-router":"react-router"}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -892,10 +851,6 @@ var _NewUserActions = require('../actions/NewUserActions');
 var NewUserActions = _interopRequireWildcard(_NewUserActions);
 
 var _reactRouter = require('react-router');
-
-var _Nav = require('./Nav1');
-
-var _Nav2 = _interopRequireDefault(_Nav);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -931,25 +886,21 @@ var NewUser = function (_React$Component) {
     key: 'getValidationState',
     value: function getValidationState() {
       var input = parseInt(this.state.value);
-      if (typeof input === 'number') return 'success';else if (typeof input === 'number') return 'error';
+      if (typeof input === 'number') return 'success';else if (typeof input !== 'number') return 'error';
     }
   }, {
     key: 'handleChange',
     value: function handleChange(e) {
       this.setState({ age: parseInt(e.target.value) });
-      console.log(this.state);
     }
   }, {
     key: 'setGender',
     value: function setGender(e) {
-      console.log(e.target.value);
       this.setState({ gender: e.target.value });
-      console.log(this.state);
     }
   }, {
     key: 'submit',
     value: function submit() {
-      console.log(this.state);
       NewUserActions.updateNewUser(this.state);
     }
   }, {
@@ -1043,7 +994,7 @@ var NewUser = function (_React$Component) {
 
 exports.default = NewUser;
 
-},{"../actions/NewUserActions":3,"./Nav1":10,"react":"react","react-bootstrap":139,"react-router":"react-router"}],12:[function(require,module,exports){
+},{"../actions/NewUserActions":4,"react":"react","react-bootstrap":139,"react-router":"react-router"}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1059,25 +1010,25 @@ var _react2 = _interopRequireDefault(_react);
 
 var _reactBootstrap = require('react-bootstrap');
 
+var _socket = require('socket.io-client');
+
+var _socket2 = _interopRequireDefault(_socket);
+
 var _UserStore = require('../stores/UserStore');
 
 var _UserStore2 = _interopRequireDefault(_UserStore);
-
-var _AppStore = require('../stores/AppStore');
-
-var _AppStore2 = _interopRequireDefault(_AppStore);
-
-var _UserActions = require('../actions/UserActions');
-
-var UserActions = _interopRequireWildcard(_UserActions);
 
 var _AppActions = require('../actions/AppActions');
 
 var AppActions = _interopRequireWildcard(_AppActions);
 
-var _Nav = require('./Nav1');
+var _NavActions = require('../actions/NavActions');
 
-var _Nav2 = _interopRequireDefault(_Nav);
+var NavActions = _interopRequireWildcard(_NavActions);
+
+var _NavBar = require('./NavBar');
+
+var _NavBar2 = _interopRequireDefault(_NavBar);
 
 var _Display = require('./Display');
 
@@ -1086,8 +1037,6 @@ var _Display2 = _interopRequireDefault(_Display);
 var _Video = require('./Video');
 
 var _Video2 = _interopRequireDefault(_Video);
-
-var _reactRouter = require('react-router');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1115,6 +1064,7 @@ var User = exports.User = function (_React$Component) {
     _this.diffchick = _this.diffchick.bind(_this);
     _this.lastgirl = _this.lastgirl.bind(_this);
     _this.reggie = _this.reggie.bind(_this);
+    _this.updateNotifications = _this.updateNotifications.bind(_this);
     _this.state = {
       user: _UserStore2.default.getUser(),
       tempSi: true
@@ -1134,11 +1084,25 @@ var User = exports.User = function (_React$Component) {
       });
     }
   }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      this.socket = (0, _socket2.default)();
+      this.socket.on("updateNotifications", this.updateNotifications);
+      if (this.props.user._id) {
+        this.socket.emit('subscribe', this.props.user._id);
+      }
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      _UserStore2.default.removeAllListeners();
+      this.socket.disconnect();
+    }
+  }, {
     key: 'seekToggle',
     value: function seekToggle() {
       var user = this.state.user;
       user.available = !user.available;
-
       this.setState({ user: user });
     }
   }, {
@@ -1148,51 +1112,92 @@ var User = exports.User = function (_React$Component) {
       console.log(this.props, "props");
     }
   }, {
+    key: 'updateNotifications',
+    value: function updateNotifications(userId) {
+      NavActions.getNotifications(userId);
+    }
+  }, {
     key: 'amauris',
     value: function amauris() {
+      var _this3 = this;
+
       AppActions.currentUser('Amauris');
       this.setState({ tempSi: false });
+      setTimeout(function () {
+        NavActions.getNotifications(_this3.props.user._id);
+        _this3.socket.emit('subscribe', _this3.props.user._id);
+      }, 200);
     }
   }, {
     key: 'austin',
     value: function austin() {
+      var _this4 = this;
+
       AppActions.currentUser('Austin');
       this.setState({ tempSi: false });
+      setTimeout(function () {
+        NavActions.getNotifications(_this4.props.user._id);
+        _this4.socket.emit('subscribe', _this4.props.user._id);
+      }, 200);
     }
   }, {
     key: 'maia',
     value: function maia() {
+      var _this5 = this;
+
       AppActions.currentUser('Maia');
       this.setState({ tempSi: false });
+      setTimeout(function () {
+        NavActions.getNotifications(_this5.props.user._id);
+        _this5.socket.emit('subscribe', _this5.props.user._id);
+      }, 200);
     }
   }, {
     key: 'diffchick',
     value: function diffchick() {
+      var _this6 = this;
+
       AppActions.currentUser('Diff');
       this.setState({ tempSi: false });
+      setTimeout(function () {
+        NavActions.getNotifications(_this6.props.user._id);
+        _this6.socket.emit('subscribe', _this6.props.user._id);
+      }, 200);
     }
   }, {
     key: 'lastgirl',
     value: function lastgirl() {
+      var _this7 = this;
+
       AppActions.currentUser('Last');
       this.setState({ tempSi: false });
+      setTimeout(function () {
+        NavActions.getNotifications(_this7.props.user._id);
+        _this7.socket.emit('subscribe', _this7.props.user._id);
+      }, 200);
     }
   }, {
     key: 'reggie',
     value: function reggie() {
+      var _this8 = this;
+
       AppActions.currentUser('Reggie');
       this.setState({ tempSi: false });
+      setTimeout(function () {
+        NavActions.getNotifications(_this8.props.user._id);
+        _this8.socket.emit('subscribe', _this8.props.user._id);
+      }, 200);
     }
   }, {
     key: 'render',
     value: function render() {
-      var matching = this.state.user.available ? "Stop matching" : "Start matching!";
-      var buttonClass = this.state.user.available ? "btn btn-danger video-control" : "btn btn-info video-control";
-      var tempSi = this.state.tempSi ? "temp-si" : "hidden";
+      var matching = this.state.user.available ? "Stop matching" : "Start matching!",
+          buttonClass = this.state.user.available ? "btn btn-danger video-control" : "btn btn-info video-control",
+          tempSi = this.state.tempSi ? "temp-si" : "hidden";
       return _react2.default.createElement(
         'div',
         { className: 'container' },
-        _react2.default.createElement(_Nav2.default, null),
+        _react2.default.createElement(_NavBar2.default, { user: this.state.user }),
         _react2.default.createElement(
           _reactBootstrap.Button,
           { onClick: this.check, className: tempSi },
@@ -1247,7 +1252,7 @@ var User = exports.User = function (_React$Component) {
 
 exports.default = User;
 
-},{"../actions/AppActions":1,"../actions/UserActions":4,"../stores/AppStore":17,"../stores/UserStore":19,"./Display":8,"./Nav1":10,"./Video":13,"react":"react","react-bootstrap":139,"react-router":"react-router"}],13:[function(require,module,exports){
+},{"../actions/AppActions":1,"../actions/NavActions":3,"../stores/UserStore":20,"./Display":8,"./NavBar":10,"./Video":13,"react":"react","react-bootstrap":139,"socket.io-client":313}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1263,10 +1268,6 @@ var _react2 = _interopRequireDefault(_react);
 var _socket = require('socket.io-client');
 
 var _socket2 = _interopRequireDefault(_socket);
-
-var _windowOrGlobal = require('window-or-global');
-
-var _windowOrGlobal2 = _interopRequireDefault(_windowOrGlobal);
 
 var _reactBootstrap = require('react-bootstrap');
 
@@ -1286,14 +1287,6 @@ var _VideoStore = require('../stores/VideoStore');
 
 var _VideoStore2 = _interopRequireDefault(_VideoStore);
 
-var _reactCountdownClockFork = require('react-countdown-clock-fork');
-
-var _reactCountdownClockFork2 = _interopRequireDefault(_reactCountdownClockFork);
-
-var _reactDelay = require('react-delay');
-
-var _reactDelay2 = _interopRequireDefault(_reactDelay);
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -1304,8 +1297,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var global = require("global");
-var document = require("global/document");
 var window = require("global/window");
 
 var Video = function (_React$Component) {
@@ -1314,34 +1305,29 @@ var Video = function (_React$Component) {
 	function Video() {
 		_classCallCheck(this, Video);
 
-		var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(Video).call(this));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Video).call(this));
 
-		_this2.open = _this2.open.bind(_this2);
-		_this2.connect = _this2.connect.bind(_this2);
-		_this2.idRetrieval = _this2.idRetrieval.bind(_this2);
-		_this2.onCall = _this2.onCall.bind(_this2);
-		_this2.closeCall = _this2.closeCall.bind(_this2);
-		_this2.error = _this2.error.bind(_this2);
-		_this2.nextMatch = _this2.nextMatch.bind(_this2);
-		_this2.femaleAction = _this2.femaleAction.bind(_this2);
-		_this2.maleAction = _this2.maleAction.bind(_this2);
-		_this2.buttonHandler = _this2.buttonHandler.bind(_this2);
-		_this2.reject = _this2.reject.bind(_this2);
-		_this2.userReady = _this2.userReady.bind(_this2);
-		_this2.noEligibleUsers = _this2.noEligibleUsers.bind(_this2);
-		_this2.closeEvent = _this2.closeEvent.bind(_this2);
-		_this2.peerSocket = _this2.peerSocket.bind(_this2);
-		_this2.makeSelection = _this2.makeSelection.bind(_this2);
-		_this2.likeHandler = _this2.likeHandler.bind(_this2);
-		_this2.usersChange = _this2.usersChange.bind(_this2);
-		_this2.notAvailable = _this2.notAvailable.bind(_this2);
-		_this2.newMatch = _this2.newMatch.bind(_this2);
-		_this2.outOfTime = _this2.outOfTime.bind(_this2);
-		_this2.doubleLike = _this2.doubleLike.bind(_this2);
-		_this2.step1 = _this2.step1.bind(_this2);
-		_this2.step2 = _this2.step2.bind(_this2);
-		_this2.step3 = _this2.step3.bind(_this2);
-		_this2.state = {
+		_this.connect = _this.connect.bind(_this);
+		_this.idRetrieval = _this.idRetrieval.bind(_this);
+		_this.onCall = _this.onCall.bind(_this);
+		_this.closeCall = _this.closeCall.bind(_this);
+		_this.error = _this.error.bind(_this);
+		_this.nextMatch = _this.nextMatch.bind(_this);
+		_this.femaleAction = _this.femaleAction.bind(_this);
+		_this.maleAction = _this.maleAction.bind(_this);
+		_this.buttonHandler = _this.buttonHandler.bind(_this);
+		_this.reject = _this.reject.bind(_this);
+		_this.noEligibleUsers = _this.noEligibleUsers.bind(_this);
+		_this.closeEvent = _this.closeEvent.bind(_this);
+		_this.peerSocket = _this.peerSocket.bind(_this);
+		_this.makeSelection = _this.makeSelection.bind(_this);
+		_this.likeHandler = _this.likeHandler.bind(_this);
+		_this.usersChange = _this.usersChange.bind(_this);
+		_this.notAvailable = _this.notAvailable.bind(_this);
+		_this.outOfTime = _this.outOfTime.bind(_this);
+		_this.doubleLike = _this.doubleLike.bind(_this);
+		_this.streamHandler = _this.streamHandler.bind(_this);
+		_this.state = {
 			mySource: '',
 			otherSource: '',
 			buttonStatus: true,
@@ -1353,40 +1339,38 @@ var Video = function (_React$Component) {
 			selecting: false,
 			waiting: true,
 			streaming: false,
-			previousChats: []
+			previousChats: [],
+			counter: 60
 		};
-		return _this2;
+		return _this;
 	}
 
 	_createClass(Video, [{
 		key: 'componentWillMount',
 		value: function componentWillMount() {
-			var _this3 = this;
+			var _this2 = this;
 
-			var peerId = this.props.user.cuid;
-			var fn = this.props.user.firstName;
-			var age = this.props.user.age;
+			var peerId = this.props.user.cuid,
+			    fn = this.props.user.firstName,
+			    age = this.props.user.age;
 			this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId, firstName: fn, age: age } });
-			this.peer.on('open', this.open);
+			this.peer.on('open', this.nextMatch);
 			this.peer.on('call', this.onCall);
 			this.peer.on('error', this.error);
 			this.socket = (0, _socket2.default)();
 			this.socket.on('connect', this.connect);
 			this.socket.on('makeSelection', this.makeSelection);
 			this.socket.on('usersChange', this.usersChange);
-			this.socket.on('userReady', this.userReady);
 			this.socket.on('notAvailable', this.notAvailable);
 			this.socket.on('peerSocket', this.peerSocket);
 			this.socket.on('closeEvent', this.closeEvent);
 			this.socket.on('idRetrieval', this.idRetrieval);
 			this.socket.on('noEligibleUsers', this.noEligibleUsers);
+			this.socket.on('startTimer', this.outOfTime);
 			this.socket.on('newMatch', this.newMatch);
-			_VideoStore2.default.on('change', function () {
-				_this3.nextMatch();
-				console.log("coming from video store change");
-			});
+			_VideoStore2.default.on('change', this.nextMatch);
 			_VideoStore2.default.on('initial', function () {
-				_this3.setState({ previousChats: _VideoStore2.default.getPreviousChats() });
+				_this2.setState({ previousChats: _VideoStore2.default.getPreviousChats() });
 			});
 		}
 	}, {
@@ -1400,74 +1384,43 @@ var Video = function (_React$Component) {
 			this.peer.destroy();
 			this.socket.disconnect();
 			_VideoStore2.default.removeAllListeners();
-			var id = setTimeout(function () {}, 0);
-			while (id--) {
-				window.clearTimeout(id); // will do nothing if no timeout with id is present
-			}
-			clearTimeout(this.timeout);
-		}
-	}, {
-		key: 'step1',
-		value: function step1() {
-			console.log("timer done");
-			// const cam = navigator.mediaDevices.getUserMedia({audio: false, video: true})
-			// 	cam.then( (mediaStream) => {
-			//   this.setState({mySource: URL.createObjectURL(mediaStream)})
-			//   window.localStream = mediaStream
-			// 	})
-			// 	cam.catch((error) => { console.log("error getting camera") });
+			clearInterval(this.countdown);
 		}
 	}, {
 		key: 'outOfTime',
 		value: function outOfTime() {
-			var _this4 = this;
+			var _this3 = this;
 
-			var _this = this;
-			this.timeout = setTimeout(function () {
-				_this4.doubleLike();
-				clearTo();
-			}, 63000);
-
-			function clearTo() {
-				clearTimeout(_this.timeout);
-				console.log("from the time run out");
-			}
+			this.countdown ? clearInterval(this.countdown) : null;
+			this.countdown = setInterval(function () {
+				if (_this3.state.counter > 0) {
+					_this3.setState({ counter: _this3.state.counter - 1 });
+				} else {
+					_this3.doubleLike();
+					clearInterval(_this3.countdown);
+				}
+			}, 1000);
 		}
 	}, {
 		key: 'doubleLike',
 		value: function doubleLike() {
-			var id = setTimeout(function () {}, 0),
-			    _this = this;
-			while (id--) {
-				window.clearTimeout(id); // will do nothing if no timeout with id is present
-			}
+			var _this4 = this;
 
-			console.log('onComplete');
+			clearInterval(this.countdown);
 			if (this.props.user.gender === "Male") {
 				this.socket.emit('likeToo', { myId: this.props.user.cuid, peerId: this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket });
 			}
 			setTimeout(function () {
-				_this.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true }, _this.closeCall);
-				VideoActions.addToPreviousChats(_this.state.peerCuid, _this.props.user.cuid);
+				_this4.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true, counter: 60 }, _this4.closeCall);
+				VideoActions.addToPreviousChats(_this4.state.peerCuid, _this4.props.user.cuid);
 			}, 200);
-		}
-	}, {
-		key: 'open',
-		value: function open() {
-			// new Promise((fulfill, reject) => {
-			// 	fulfill(this.step1())
-			// }).then(() => {
-			this.nextMatch();
-			console.log(this.state.previousChats, "from open");
-			// })	
 		}
 	}, {
 		key: 'nextMatch',
 		value: function nextMatch() {
 			if (this.props.user.gender === "Female") {
 				this.femaleAction();
-			}
-			if (this.props.user.gender === "Male") {
+			} else if (this.props.user.gender === "Male") {
 				this.maleAction();
 			}
 		}
@@ -1510,19 +1463,12 @@ var Video = function (_React$Component) {
 							peerName: _this5.props.user.firstName,
 							peerAge: _this5.props.user.age
 						} });
-					_this5.step3(call);
+					_this5.streamHandler(call);
 				});
 				cam.catch(function (error) {
 					console.log("error getting camera");
 				});
 			}
-
-			// new Promise((fulfill, reject) => {
-			// 	const call = this.peer.call(payload, mediaStream, {metadata: {peerSocket: this.socket.id}})
-			// 	fulfill(call)
-			// }).then((call) => {
-			// 	this.step3(call)
-			// 	})
 		}
 	}, {
 		key: 'buttonHandler',
@@ -1530,15 +1476,9 @@ var Video = function (_React$Component) {
 			var _this6 = this;
 
 			this.setState({ buttonStatus: true });
-			var timeout = setTimeout(function () {
+			setTimeout(function () {
 				_this6.setState({ buttonStatus: false });
-				clearTo();
 			}, 2000);
-
-			function clearTo() {
-				console.log(timeout, "from button clear");
-				clearTimeout(timeout);
-			}
 		}
 	}, {
 		key: 'closeCall',
@@ -1548,13 +1488,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'reject',
 		value: function reject() {
-			console.log(toastr.options, "from reject");
-			toastr.error("no title");
-			var id = setTimeout(function () {}, 0);
-			while (id--) {
-				window.clearTimeout(id); // will do nothing if no timeout with id is present
-			}
-			clearTimeout(this.timeout);
+			clearInterval(this.countdown);
 			this.socket.emit('rejected', this.state.peerSocket);
 			VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
 			this.setState({ selecting: false, streaming: false, waiting: true, buttonStatus: true }, this.closeCall);
@@ -1562,11 +1496,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'likeHandler',
 		value: function likeHandler() {
-			var id = setTimeout(function () {}, 0);
-			while (id--) {
-				window.clearTimeout(id); // will do nothing if no timeout with id is present
-			}
-			clearTimeout(this.timeout);
+			clearInterval(this.countdown);
 			if (this.state.selecting) {
 				this.socket.emit('likeToo', { myId: this.props.user.cuid, peerId: this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket });
 			} else {
@@ -1578,42 +1508,31 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'makeSelection',
 		value: function makeSelection() {
+			clearInterval(this.countdown);
 			this.setState({ selecting: true });
 		}
 	}, {
 		key: 'notAvailable',
 		value: function notAvailable() {
 			this.setState({ waiting: true });
-			console.log('all potential matches are busy at the moment');
 		}
 	}, {
 		key: 'noEligibleUsers',
 		value: function noEligibleUsers() {
 			this.setState({ waiting: true });
-			console.log("No available users at the moment");
 		}
 	}, {
 		key: 'usersChange',
 		value: function usersChange(payload) {
 			var check = _underscore2.default.contains(this.state.previousChats, payload);
 			if (this.props.user.cuid != payload && !this.state.streaming && !check) {
-				console.log("received user change " + payload + " " + Date.now());
 				this.state.waiting ? this.nextMatch() : null;
-			}
-		}
-	}, {
-		key: 'userReady',
-		value: function userReady(payload) {
-			if (!this.state.streaming && !this.state.waiting) {
-				this.socket.emit("pullFromWaiting");
 			}
 		}
 	}, {
 		key: 'closeEvent',
 		value: function closeEvent(payload) {
-			clearTimeout(this.timeout);
-			console.log(payload, "payload from closeEvent");
-			console.log(this.state.peerSocket, "peerSocket from closeEvent");
+			clearInterval(this.countdown);
 			if (!this.state.selecting && !this.state.streaming || this.state.peerSocket == payload && this.state.streaming) {
 				VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
 				this.setState({ streaming: false, waiting: true, buttonStatus: true }, this.closeCall);
@@ -1630,9 +1549,6 @@ var Video = function (_React$Component) {
 			this.setState({ peerSocket: payload });
 		}
 	}, {
-		key: 'newMatch',
-		value: function newMatch() {}
-	}, {
 		key: 'onCall',
 		value: function onCall(call) {
 			var _this7 = this;
@@ -1648,60 +1564,40 @@ var Video = function (_React$Component) {
 					waiting: false
 				});
 				call.answer(mediaStream);
-				_this7.step3(call);
+				_this7.streamHandler(call);
 			});
 			cam.catch(function (error) {
 				console.log("error getting camera");
 			});
-
-			// this.setState({peerSocket: call.metadata.peerSocket})
-			// call.answer(mediaStream);
-			//   this.step3(call);
 		}
 	}, {
 		key: 'error',
 		value: function error(err) {
-			alert(err.message);
-			// Return to step 2 if error occurs
-			this.step2();
+			console.log(err.message);
 		}
 	}, {
-		key: 'step2',
-		value: function step2() {}
-	}, {
-		key: 'step3',
-		value: function step3(call) {
+		key: 'streamHandler',
+		value: function streamHandler(call) {
 			var _this8 = this;
 
-			// var chatLimit;
+			var user1 = this.props.user.gender === "Female" ? this.props.user.cuid : this.state.peerCuid,
+			    user2 = this.props.user.gender === "Male" ? this.props.user.cuid : this.state.peerCuid;
 			call.on('stream', function (stream) {
 				if (_this8.props.user.gender === "Female") {
 					_this8.socket.emit('sendSocket', { destination: _this8.state.peerSocket, socketId: _this8.socket.id });
 				}
 				var previousChats = _this8.state.previousChats.slice();
 				previousChats.push(_this8.state.peerCuid);
-				_this8.setState({ otherSource: URL.createObjectURL(stream), streaming: true, previousChats: previousChats }, _this8.outOfTime);
-				console.log("repetition check from stream");
+				_this8.setState({ otherSource: URL.createObjectURL(stream), streaming: true, previousChats: previousChats, counter: 60 });
+				_this8.socket.emit("timerEvent", { user1: user1, user2: user2 });
 				_this8.buttonHandler();
-				//   chatLimit = setTimeout(() => {
-				// 		window.existingCall.close();
-				// 		alert("Conversation has ended")
-				// }, 8000)
 			});
 			window.existingCall = call;
 			call.on('close', function () {
-				// clearTimeout(chatLimit)
-				var id = setTimeout(function () {}, 0);
-				while (id--) {
-					window.clearTimeout(id); // will do nothing if no timeout with id is present
-				}
-				clearTimeout(_this8.timeout);
-				console.log(_this8.props.user.firstName + " " + _this8.props.user.gender + " " + _this8.state.streaming);
+				clearInterval(_this8.countdown);
 				if (_this8.state.streaming) {
 					_this8.socket.emit('rejected', _this8.state.peerSocket);
 					_this8.setState({ streaming: false, waiting: true });
-					// this.state.selecting ? null : VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
-					console.log("shouldn't get here from like or reject button");
 					if (!_this8.state.selecting) {
 						_this8.setState({ buttonStatus: true });
 						VideoActions.addToPreviousChats(_this8.state.peerCuid, _this8.props.user.cuid);
@@ -1714,13 +1610,11 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'render',
 		value: function render() {
-			var mySource = this.state.mySource;
-			var otherSource = this.state.otherSource;
-			var buttonStatus = this.state.buttonStatus;
-
-			var leftButtonClass = buttonStatus ? "disabled-button" : "text-danger g-arrows";
-
-			var rightButtonClass = buttonStatus ? "disabled-button" : "text-success g-arrows";
+			var mySource = this.state.mySource,
+			    otherSource = this.state.otherSource,
+			    buttonStatus = this.state.buttonStatus,
+			    leftButtonClass = buttonStatus ? "disabled-button" : "text-danger g-arrows",
+			    rightButtonClass = buttonStatus ? "disabled-button" : "text-success g-arrows";
 			return _react2.default.createElement(
 				'div',
 				null,
@@ -1728,7 +1622,7 @@ var Video = function (_React$Component) {
 					'div',
 					{ id: 'vid-container' },
 					_react2.default.createElement('video', { id: 'my-video', src: this.state.waiting ? null : mySource, autoPlay: true }),
-					_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/img/static3.mp4' : otherSource, autoPlay: true, muted: this.state.waiting, loop: this.state.waiting }),
+					_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/videos/static3.mp4' : otherSource, autoPlay: true, muted: this.state.waiting, loop: this.state.waiting }),
 					_react2.default.createElement(
 						'div',
 						{ id: 'left-button-container' },
@@ -1772,9 +1666,9 @@ var Video = function (_React$Component) {
 					_Display2.default,
 					{ 'if': this.state.streaming },
 					_react2.default.createElement(
-						_reactDelay2.default,
-						{ wait: 1000 },
-						_react2.default.createElement(_reactCountdownClockFork2.default, { seconds: 60, color: 'black', alpha: 0.9, onComplete: null, showMilliseconds: false })
+						'h3',
+						{ className: 'countdown' },
+						this.state.counter
 					)
 				),
 				_react2.default.createElement(
@@ -1808,7 +1702,7 @@ var Video = function (_React$Component) {
 
 exports.default = Video;
 
-},{"../actions/VideoActions":5,"../stores/VideoStore":20,"./Display":8,"global":28,"global/document":27,"global/window":28,"react":"react","react-bootstrap":139,"react-countdown-clock-fork":313,"react-delay":314,"socket.io-client":315,"underscore":"underscore","window-or-global":362}],14:[function(require,module,exports){
+},{"../actions/VideoActions":5,"../stores/VideoStore":21,"./Display":8,"global/window":28,"react":"react","react-bootstrap":139,"socket.io-client":313,"underscore":"underscore"}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1819,7 +1713,7 @@ var _flux = require('flux');
 
 exports.default = new _flux.Dispatcher();
 
-},{"flux":24}],15:[function(require,module,exports){
+},{"flux":25}],15:[function(require,module,exports){
 'use strict';
 
 var _react = require('react');
@@ -1984,7 +1878,7 @@ var appStore = new AppStore();
 _dispatcher2.default.register(appStore.handleActions.bind(appStore));
 exports.default = appStore;
 
-},{"../dispatcher":14,"events":22}],18:[function(require,module,exports){
+},{"../dispatcher":14,"events":23}],18:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2078,7 +1972,76 @@ var chatStore = new ChatStore();
 _dispatcher2.default.register(chatStore.handleActions.bind(chatStore));
 exports.default = chatStore;
 
-},{"../dispatcher":14,"events":22}],19:[function(require,module,exports){
+},{"../dispatcher":14,"events":23}],19:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _events = require('events');
+
+var _dispatcher = require('../dispatcher');
+
+var _dispatcher2 = _interopRequireDefault(_dispatcher);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var NavStore = function (_EventEmitter) {
+  _inherits(NavStore, _EventEmitter);
+
+  function NavStore() {
+    _classCallCheck(this, NavStore);
+
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(NavStore).call(this));
+
+    _this.notifications = 0;
+    return _this;
+  }
+
+  _createClass(NavStore, [{
+    key: 'getNotifications',
+    value: function getNotifications() {
+      return this.notifications;
+    }
+  }, {
+    key: 'setNotifications',
+    value: function setNotifications(number) {
+      this.notifications = number ? number.amount : 0;
+      this.emit("change");
+    }
+  }, {
+    key: 'handleActions',
+    value: function handleActions(action) {
+      switch (action.type) {
+        case "CHAT_NOTIFICATIONS":
+          {
+            this.setNotifications(action.notifications);
+          }
+        case "CLEAR_NOTIFICATIONS":
+          {
+            this.setNotifications(action.notifications);
+          }
+      }
+    }
+  }]);
+
+  return NavStore;
+}(_events.EventEmitter);
+
+var navStore = new NavStore();
+_dispatcher2.default.register(navStore.handleActions.bind(navStore));
+exports.default = navStore;
+
+},{"../dispatcher":14,"events":23}],20:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2174,7 +2137,7 @@ var userStore = new UserStore();
 _dispatcher2.default.register(userStore.handleActions.bind(userStore));
 exports.default = userStore;
 
-},{"../dispatcher":14,"events":22}],20:[function(require,module,exports){
+},{"../dispatcher":14,"events":23}],21:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2249,9 +2212,9 @@ var videoStore = new VideoStore();
 _dispatcher2.default.register(videoStore.handleActions.bind(videoStore));
 exports.default = videoStore;
 
-},{"../dispatcher":14,"events":22}],21:[function(require,module,exports){
+},{"../dispatcher":14,"events":23}],22:[function(require,module,exports){
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2555,7 +2518,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -2676,7 +2639,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /**
  * Copyright (c) 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -2688,7 +2651,7 @@ process.umask = function() { return 0; };
 
 module.exports.Dispatcher = require('./lib/Dispatcher');
 
-},{"./lib/Dispatcher":25}],25:[function(require,module,exports){
+},{"./lib/Dispatcher":26}],26:[function(require,module,exports){
 (function (process){
 /**
  * Copyright (c) 2014-2015, Facebook, Inc.
@@ -2923,7 +2886,7 @@ var Dispatcher = (function () {
 module.exports = Dispatcher;
 }).call(this,require('_process'))
 
-},{"_process":23,"fbjs/lib/invariant":26}],26:[function(require,module,exports){
+},{"_process":24,"fbjs/lib/invariant":27}],27:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2015, Facebook, Inc.
@@ -2976,27 +2939,7 @@ var invariant = function (condition, format, a, b, c, d, e, f) {
 module.exports = invariant;
 }).call(this,require('_process'))
 
-},{"_process":23}],27:[function(require,module,exports){
-(function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-document');
-
-if (typeof document !== 'undefined') {
-    module.exports = document;
-} else {
-    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-
-    module.exports = doccy;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"min-document":21}],28:[function(require,module,exports){
+},{"_process":24}],28:[function(require,module,exports){
 (function (global){
 if (typeof window !== "undefined") {
     module.exports = window;
@@ -3141,7 +3084,7 @@ function readState(key) {
 }
 }).call(this,require('_process'))
 
-},{"_process":23,"warning":46}],32:[function(require,module,exports){
+},{"_process":24,"warning":46}],32:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -3410,7 +3353,7 @@ exports['default'] = createBrowserHistory;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./Actions":29,"./DOMStateStorage":31,"./DOMUtils":32,"./ExecutionEnvironment":33,"./createDOMHistory":35,"./parsePath":40,"_process":23,"invariant":45}],35:[function(require,module,exports){
+},{"./Actions":29,"./DOMStateStorage":31,"./DOMUtils":32,"./ExecutionEnvironment":33,"./createDOMHistory":35,"./parsePath":40,"_process":24,"invariant":45}],35:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3454,7 +3397,7 @@ exports['default'] = createDOMHistory;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./DOMUtils":32,"./ExecutionEnvironment":33,"./createHistory":36,"_process":23,"invariant":45}],36:[function(require,module,exports){
+},{"./DOMUtils":32,"./ExecutionEnvironment":33,"./createHistory":36,"_process":24,"invariant":45}],36:[function(require,module,exports){
 //import warning from 'warning'
 'use strict';
 
@@ -3879,7 +3822,7 @@ exports['default'] = parsePath;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./extractPath":39,"_process":23,"warning":46}],41:[function(require,module,exports){
+},{"./extractPath":39,"_process":24,"warning":46}],41:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3907,7 +3850,7 @@ exports['default'] = runTransitionHook;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"_process":23,"warning":46}],42:[function(require,module,exports){
+},{"_process":24,"warning":46}],42:[function(require,module,exports){
 var pSlice = Array.prototype.slice;
 var objectKeys = require('./lib/keys.js');
 var isArguments = require('./lib/is_arguments.js');
@@ -4092,7 +4035,7 @@ module.exports = invariant;
 
 }).call(this,require('_process'))
 
-},{"_process":23}],46:[function(require,module,exports){
+},{"_process":24}],46:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -4157,7 +4100,7 @@ module.exports = warning;
 
 }).call(this,require('_process'))
 
-},{"_process":23}],47:[function(require,module,exports){
+},{"_process":24}],47:[function(require,module,exports){
 //! moment.js
 //! version : 2.15.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -9766,7 +9709,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('checkbox', Checkbox);
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./utils/bootstrapUtils":144,"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],61:[function(require,module,exports){
+},{"./utils/bootstrapUtils":144,"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],61:[function(require,module,exports){
 'use strict';
 
 var _extends = require('babel-runtime/helpers/extends')['default'];
@@ -10442,7 +10385,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('control-label', ControlLabel)
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./utils/bootstrapUtils":144,"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],65:[function(require,module,exports){
+},{"./utils/bootstrapUtils":144,"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],65:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -10870,7 +10813,7 @@ exports['default'] = Dropdown;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./ButtonGroup":54,"./DropdownMenu":67,"./DropdownToggle":68,"./utils/CustomPropTypes":141,"./utils/ValidComponentChildren":143,"./utils/bootstrapUtils":144,"./utils/createChainedFunction":147,"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"dom-helpers/activeElement":185,"dom-helpers/query/contains":195,"keycode":215,"lodash-compat/collection/find":217,"lodash-compat/object/omit":279,"react":"react","react-dom":"react-dom","react-prop-types/lib/all":303,"react-prop-types/lib/elementType":306,"react-prop-types/lib/isRequiredForA11y":307,"uncontrollable":310,"warning":312}],66:[function(require,module,exports){
+},{"./ButtonGroup":54,"./DropdownMenu":67,"./DropdownToggle":68,"./utils/CustomPropTypes":141,"./utils/ValidComponentChildren":143,"./utils/bootstrapUtils":144,"./utils/createChainedFunction":147,"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"dom-helpers/activeElement":185,"dom-helpers/query/contains":195,"keycode":215,"lodash-compat/collection/find":217,"lodash-compat/object/omit":279,"react":"react","react-dom":"react-dom","react-prop-types/lib/all":303,"react-prop-types/lib/elementType":306,"react-prop-types/lib/isRequiredForA11y":307,"uncontrollable":310,"warning":312}],66:[function(require,module,exports){
 'use strict';
 
 var _inherits = require('babel-runtime/helpers/inherits')['default'];
@@ -11570,7 +11513,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('form-control', FormControl);
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./FormControlFeedback":72,"./FormControlStatic":73,"./utils/bootstrapUtils":144,"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","react-prop-types/lib/elementType":306,"warning":312}],72:[function(require,module,exports){
+},{"./FormControlFeedback":72,"./FormControlStatic":73,"./utils/bootstrapUtils":144,"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","react-prop-types/lib/elementType":306,"warning":312}],72:[function(require,module,exports){
 'use strict';
 
 var _inherits = require('babel-runtime/helpers/inherits')['default'];
@@ -14702,7 +14645,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('nav', _utilsBootstrapUtils.bs
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./utils/ValidComponentChildren":143,"./utils/bootstrapUtils":144,"./utils/createChainedFunction":147,"./utils/tabUtils":150,"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"keycode":215,"react":"react","react-dom":"react-dom","react-prop-types/lib/all":303,"warning":312}],106:[function(require,module,exports){
+},{"./utils/ValidComponentChildren":143,"./utils/bootstrapUtils":144,"./utils/createChainedFunction":147,"./utils/tabUtils":150,"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"keycode":215,"react":"react","react-dom":"react-dom","react-prop-types/lib/all":303,"warning":312}],106:[function(require,module,exports){
 'use strict';
 
 var _inherits = require('babel-runtime/helpers/inherits')['default'];
@@ -15811,7 +15754,7 @@ exports['default'] = OverlayTrigger;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./Overlay":113,"./utils/createChainedFunction":147,"_process":23,"babel-runtime/core-js/object/keys":153,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/interop-require-default":158,"dom-helpers/query/contains":195,"lodash-compat/object/pick":281,"react":"react","react-dom":"react-dom","warning":312}],115:[function(require,module,exports){
+},{"./Overlay":113,"./utils/createChainedFunction":147,"_process":24,"babel-runtime/core-js/object/keys":153,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/interop-require-default":158,"dom-helpers/query/contains":195,"lodash-compat/object/pick":281,"react":"react","react-dom":"react-dom","warning":312}],115:[function(require,module,exports){
 'use strict';
 
 var _extends = require('babel-runtime/helpers/extends')['default'];
@@ -17219,7 +17162,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('radio', Radio);
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./utils/bootstrapUtils":144,"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],125:[function(require,module,exports){
+},{"./utils/bootstrapUtils":144,"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],125:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -17316,7 +17259,7 @@ exports['default'] = ResponsiveEmbed;
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],126:[function(require,module,exports){
+},{"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"babel-runtime/helpers/object-without-properties":160,"classnames":184,"react":"react","warning":312}],126:[function(require,module,exports){
 'use strict';
 
 var _extends = require('babel-runtime/helpers/extends')['default'];
@@ -18041,7 +17984,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('tab', TabContent);
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./utils/bootstrapUtils":144,"_process":23,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"invariant":214,"react":"react","react-prop-types/lib/elementType":306}],133:[function(require,module,exports){
+},{"./utils/bootstrapUtils":144,"_process":24,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"invariant":214,"react":"react","react-prop-types/lib/elementType":306}],133:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -18342,7 +18285,7 @@ exports['default'] = _utilsBootstrapUtils.bsClass('tab', TabPane);
 module.exports = exports['default'];
 }).call(this,require('_process'))
 
-},{"./Fade":69,"./utils/bootstrapUtils":144,"./utils/createChainedFunction":147,"./utils/tabUtils":150,"_process":23,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"dom-helpers/class/addClass":186,"react":"react","react-prop-types/lib/elementType":306,"warning":312}],134:[function(require,module,exports){
+},{"./Fade":69,"./utils/bootstrapUtils":144,"./utils/createChainedFunction":147,"./utils/tabUtils":150,"_process":24,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/interop-require-default":158,"classnames":184,"dom-helpers/class/addClass":186,"react":"react","react-prop-types/lib/elementType":306,"warning":312}],134:[function(require,module,exports){
 'use strict';
 
 var _extends = require('babel-runtime/helpers/extends')['default'];
@@ -19976,7 +19919,7 @@ var _curry = curry;
 exports._curry = _curry;
 }).call(this,require('_process'))
 
-},{"../styleMaps":140,"_process":23,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/interop-require-default":158,"invariant":214,"react":"react"}],145:[function(require,module,exports){
+},{"../styleMaps":140,"_process":24,"babel-runtime/helpers/extends":156,"babel-runtime/helpers/interop-require-default":158,"invariant":214,"react":"react"}],145:[function(require,module,exports){
 'use strict';
 
 var _interopRequireDefault = require('babel-runtime/helpers/interop-require-default')['default'];
@@ -20151,7 +20094,7 @@ function _resetWarned() {
 }
 }).call(this,require('_process'))
 
-},{"_process":23,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"warning":312}],149:[function(require,module,exports){
+},{"_process":24,"babel-runtime/helpers/class-call-check":155,"babel-runtime/helpers/inherits":157,"babel-runtime/helpers/interop-require-default":158,"warning":312}],149:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = require('babel-runtime/helpers/interop-require-wildcard')['default'];
@@ -21244,7 +21187,7 @@ module.exports = invariant;
 
 }).call(this,require('_process'))
 
-},{"_process":23}],215:[function(require,module,exports){
+},{"_process":24}],215:[function(require,module,exports){
 // Source: http://jsfiddle.net/vWx8V/
 // http://stackoverflow.com/questions/5603195/full-list-of-javascript-keycodes
 
@@ -26477,7 +26420,7 @@ function has(o, k) {
 }
 }).call(this,require('_process'))
 
-},{"_process":23,"invariant":214,"react":"react"}],312:[function(require,module,exports){
+},{"_process":24,"invariant":214,"react":"react"}],312:[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2014-2015, Facebook, Inc.
@@ -26542,135 +26485,7 @@ module.exports = warning;
 
 }).call(this,require('_process'))
 
-},{"_process":23}],313:[function(require,module,exports){
-!function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e(require("react")):"function"==typeof define&&define.amd?define(["react"],e):"object"==typeof exports?exports.ReactCountdownClock=e(require("react")):t.ReactCountdownClock=e(t.React)}(this,function(t){return function(t){function e(i){if(s[i])return s[i].exports;var n=s[i]={exports:{},id:i,loaded:!1};return t[i].call(n.exports,n,n.exports,e),n.loaded=!0,n.exports}var s={};return e.m=t,e.c=s,e.p="/build/",e(0)}([function(t,e,s){var i;i=s(1),t.exports=i.createClass({_seconds:0,_radius:null,_fraction:null,_content:null,_canvas:null,_timeoutIds:[],displayName:"ReactCountdownClock",propTypes:{seconds:i.PropTypes.number,size:i.PropTypes.number,weight:i.PropTypes.number,color:i.PropTypes.string,fontSize:i.PropTypes.string,font:i.PropTypes.string,alpha:i.PropTypes.number,timeFormat:i.PropTypes.string,onComplete:i.PropTypes.func,showMilliseconds:i.PropTypes.bool,restartOnNewProps:i.PropTypes.bool},getDefaultProps:function(){return{seconds:60,size:300,color:"#000",alpha:1,timeFormat:"hms",fontSize:"auto",font:"Arial",showMilliseconds:!0,restartOnNewProps:!0}},componentWillReceiveProps:function(t){if(this.props.restartOnNewProps)return this._seconds=t.seconds,this._setupTimer()},componentDidMount:function(){return this._seconds=this.props.seconds,this._setupTimer()},componentWillUnmount:function(){return this._cancelTimer()},_setupTimer:function(){return this._setScale(),this._setupCanvas(),this._drawTimer(),this._startTimer()},_updateCanvas:function(){return this._clearTimer(),this._drawTimer()},_setScale:function(){return this._radius=this.props.size/2,this._fraction=2/this._seconds,this._tickPeriod=this._calculateTick(),this._innerRadius=this.props.weight?this._radius-this.props.weight:this._radius/1.8},_calculateTick:function(){var t,e;return e=1.8,t=this._seconds*e,t>1e3?1e3:t},_setupCanvas:function(){return this._canvas=this.refs.canvas,this._context=this._canvas.getContext("2d"),this._context.textAlign="center",this._context.textBaseline="middle"},_startTimer:function(){return this._timeoutIds.push(setTimeout(function(t){return function(){return t._tick()}}(this),200))},_cancelTimer:function(){var t,e,s,i,n;for(s=this._timeoutIds,i=[],t=0,e=s.length;t<e;t++)n=s[t],i.push(clearTimeout(n));return i},_tick:function(){var t;return t=Date.now(),this._timeoutIds.push(setTimeout(function(e){return function(){var s;return s=(Date.now()-t)/2e3,e._seconds-=s,e._seconds<=0?(e._seconds=0,e._handleComplete(),e._clearTimer()):(e._updateCanvas(),e._tick())}}(this),this._tickPeriod))},_handleComplete:function(){if(this.props.onComplete)return this.props.onComplete()},_clearTimer:function(){return this._context.clearRect(0,0,this._canvas.width,this._canvas.height),this._drawBackground()},_drawBackground:function(){return this._context.beginPath(),this._context.globalAlpha=this.props.alpha/3,this._context.arc(this._radius,this._radius,this._radius,0,2*Math.PI,!1),this._context.arc(this._radius,this._radius,this._innerRadius,2*Math.PI,0,!0),this._context.fill()},_formattedTime:function(){var t,e,s,i,n,r;return t=null!=(i=this._seconds<=9.9&&this.props.showMilliseconds)?i:{1:0},"hms"===this.props.timeFormat?(e=parseInt(this._seconds/3600)%24,s=parseInt(this._seconds/60)%60,n=(this._seconds%60).toFixed(t),e<10&&(e="0"+e),s<10&&(s="0"+s),n<10&&s>=1&&(n="0"+n),r=[],e>0&&r.push(e),s>0&&r.push(s),r.push(n),r.join(":")):this._seconds.toFixed(t)},_fontSize:function(t){var e,s;return"auto"===this.props.fontSize?(e=function(){switch(t.length){case 8:return 4;case 5:return 3;default:return 2}}(),s=this._radius/e,s+"px"):this.props.fontSize},_drawTimer:function(){var t,e;return e=this._fraction*this._seconds+1.5,t=this._formattedTime(),this._context.globalAlpha=this.props.alpha,this._context.fillStyle=this.props.color,this._context.font="bold "+this._fontSize(t)+" "+this.props.font,this._context.fillText(t,this._radius,this._radius),this._context.beginPath(),this._context.arc(this._radius,this._radius,this._radius,1.5*Math.PI,Math.PI*e,!1),this._context.arc(this._radius,this._radius,this._innerRadius,Math.PI*e,1.5*Math.PI,!0),this._context.fill()},render:function(){return i.createElement("canvas",{ref:"canvas",className:"react-countdown-clock",width:this.props.size,height:this.props.size})}})},function(e,s){e.exports=t}])});
-
-},{"react":"react"}],314:[function(require,module,exports){
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("react"));
-	else if(typeof define === 'function' && define.amd)
-		define(["react"], factory);
-	else if(typeof exports === 'object')
-		exports["Delay"] = factory(require("react"));
-	else
-		root["Delay"] = factory(root["react"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__) {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
-/******/ 			return installedModules[moduleId].exports;
-
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			exports: {},
-/******/ 			id: moduleId,
-/******/ 			loaded: false
-/******/ 		};
-
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
-/******/ 		// Flag the module as loaded
-/******/ 		module.loaded = true;
-
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-
-
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__webpack_require__.m = modules;
-
-/******/ 	// expose the module cache
-/******/ 	__webpack_require__.c = installedModules;
-
-/******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "";
-
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(0);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var Delay = _react2['default'].createClass({
-
-	  displayName: 'Delay',
-
-	  propTypes: {
-	    wait: _react2['default'].PropTypes.number
-	  },
-
-	  getDefaultProps: function getDefaultProps() {
-	    return {
-	      wait: 250
-	    };
-	  },
-
-	  getInitialState: function getInitialState() {
-	    return {
-	      waiting: true
-	    };
-	  },
-
-	  componentDidMount: function componentDidMount() {
-	    var _this = this;
-
-	    this.timer = setTimeout(function () {
-	      _this.setState({
-	        waiting: false
-	      });
-	    }, this.props.wait);
-	  },
-
-	  componentWillUnmount: function componentWillUnmount() {
-	    clearTimeout(this.timer);
-	  },
-
-	  render: function render() {
-	    if (!this.state.waiting) {
-	      return this.props.children;
-	    }
-
-	    return null;
-	  }
-	});
-
-	exports['default'] = Delay;
-	module.exports = exports['default'];
-
-/***/ },
-/* 1 */
-/***/ function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
-
-/***/ }
-/******/ ])
-});
-;
-},{"react":"react"}],315:[function(require,module,exports){
+},{"_process":24}],313:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26764,7 +26579,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":316,"./socket":318,"./url":319,"debug":323,"socket.io-parser":356}],316:[function(require,module,exports){
+},{"./manager":314,"./socket":316,"./url":317,"debug":321,"socket.io-parser":354}],314:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -27323,7 +27138,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":317,"./socket":318,"backo2":320,"component-bind":321,"component-emitter":322,"debug":323,"engine.io-client":326,"indexof":353,"socket.io-parser":356}],317:[function(require,module,exports){
+},{"./on":315,"./socket":316,"backo2":318,"component-bind":319,"component-emitter":320,"debug":321,"engine.io-client":324,"indexof":351,"socket.io-parser":354}],315:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -27349,7 +27164,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],318:[function(require,module,exports){
+},{}],316:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -27763,7 +27578,7 @@ Socket.prototype.compress = function(compress){
   return this;
 };
 
-},{"./on":317,"component-bind":321,"component-emitter":322,"debug":323,"has-binary":351,"socket.io-parser":356,"to-array":361}],319:[function(require,module,exports){
+},{"./on":315,"component-bind":319,"component-emitter":320,"debug":321,"has-binary":349,"socket.io-parser":354,"to-array":359}],317:[function(require,module,exports){
 (function (global){
 
 /**
@@ -27844,7 +27659,7 @@ function url(uri, loc){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"debug":323,"parseuri":354}],320:[function(require,module,exports){
+},{"debug":321,"parseuri":352}],318:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -27931,7 +27746,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],321:[function(require,module,exports){
+},{}],319:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -27956,7 +27771,7 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],322:[function(require,module,exports){
+},{}],320:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -28119,7 +27934,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],323:[function(require,module,exports){
+},{}],321:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -28289,7 +28104,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-},{"./debug":324}],324:[function(require,module,exports){
+},{"./debug":322}],322:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -28488,7 +28303,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":325}],325:[function(require,module,exports){
+},{"ms":323}],323:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -28615,11 +28430,11 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],326:[function(require,module,exports){
+},{}],324:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":327}],327:[function(require,module,exports){
+},{"./lib/":325}],325:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -28631,7 +28446,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":328,"engine.io-parser":338}],328:[function(require,module,exports){
+},{"./socket":326,"engine.io-parser":336}],326:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -29364,7 +29179,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./transport":329,"./transports":330,"component-emitter":336,"debug":323,"engine.io-parser":338,"indexof":353,"parsejson":348,"parseqs":349,"parseuri":354}],329:[function(require,module,exports){
+},{"./transport":327,"./transports":328,"component-emitter":334,"debug":321,"engine.io-parser":336,"indexof":351,"parsejson":346,"parseqs":347,"parseuri":352}],327:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -29521,7 +29336,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":336,"engine.io-parser":338}],330:[function(require,module,exports){
+},{"component-emitter":334,"engine.io-parser":336}],328:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -29579,7 +29394,7 @@ function polling(opts){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./polling-jsonp":331,"./polling-xhr":332,"./websocket":334,"xmlhttprequest-ssl":335}],331:[function(require,module,exports){
+},{"./polling-jsonp":329,"./polling-xhr":330,"./websocket":332,"xmlhttprequest-ssl":333}],329:[function(require,module,exports){
 (function (global){
 
 /**
@@ -29822,7 +29637,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./polling":333,"component-inherit":337}],332:[function(require,module,exports){
+},{"./polling":331,"component-inherit":335}],330:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -30239,7 +30054,7 @@ function unloadHandler() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./polling":333,"component-emitter":336,"component-inherit":337,"debug":323,"xmlhttprequest-ssl":335}],333:[function(require,module,exports){
+},{"./polling":331,"component-emitter":334,"component-inherit":335,"debug":321,"xmlhttprequest-ssl":333}],331:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -30488,7 +30303,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":329,"component-inherit":337,"debug":323,"engine.io-parser":338,"parseqs":349,"xmlhttprequest-ssl":335,"yeast":350}],334:[function(require,module,exports){
+},{"../transport":327,"component-inherit":335,"debug":321,"engine.io-parser":336,"parseqs":347,"xmlhttprequest-ssl":333,"yeast":348}],332:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -30781,7 +30596,7 @@ WS.prototype.check = function(){
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../transport":329,"component-inherit":337,"debug":323,"engine.io-parser":338,"parseqs":349,"ws":21,"yeast":350}],335:[function(require,module,exports){
+},{"../transport":327,"component-inherit":335,"debug":321,"engine.io-parser":336,"parseqs":347,"ws":22,"yeast":348}],333:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -30819,7 +30634,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":347}],336:[function(require,module,exports){
+},{"has-cors":345}],334:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -30985,7 +30800,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],337:[function(require,module,exports){
+},{}],335:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -30993,7 +30808,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],338:[function(require,module,exports){
+},{}],336:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -31592,7 +31407,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./keys":339,"after":340,"arraybuffer.slice":341,"base64-arraybuffer":342,"blob":343,"has-binary":344,"utf8":346}],339:[function(require,module,exports){
+},{"./keys":337,"after":338,"arraybuffer.slice":339,"base64-arraybuffer":340,"blob":341,"has-binary":342,"utf8":344}],337:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -31613,7 +31428,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],340:[function(require,module,exports){
+},{}],338:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -31643,7 +31458,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],341:[function(require,module,exports){
+},{}],339:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -31674,7 +31489,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],342:[function(require,module,exports){
+},{}],340:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -31735,7 +31550,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],343:[function(require,module,exports){
+},{}],341:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -31836,7 +31651,7 @@ module.exports = (function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],344:[function(require,module,exports){
+},{}],342:[function(require,module,exports){
 (function (global){
 
 /*
@@ -31899,12 +31714,12 @@ function hasBinary(data) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"isarray":345}],345:[function(require,module,exports){
+},{"isarray":343}],343:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],346:[function(require,module,exports){
+},{}],344:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -32153,7 +31968,7 @@ module.exports = Array.isArray || function (arr) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],347:[function(require,module,exports){
+},{}],345:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -32172,7 +31987,7 @@ try {
   module.exports = false;
 }
 
-},{}],348:[function(require,module,exports){
+},{}],346:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -32208,7 +32023,7 @@ module.exports = function parsejson(data) {
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],349:[function(require,module,exports){
+},{}],347:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -32247,7 +32062,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],350:[function(require,module,exports){
+},{}],348:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -32317,7 +32132,7 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}],351:[function(require,module,exports){
+},{}],349:[function(require,module,exports){
 (function (global){
 
 /*
@@ -32381,9 +32196,9 @@ function hasBinary(data) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"isarray":352}],352:[function(require,module,exports){
-arguments[4][345][0].apply(exports,arguments)
-},{"dup":345}],353:[function(require,module,exports){
+},{"isarray":350}],350:[function(require,module,exports){
+arguments[4][343][0].apply(exports,arguments)
+},{"dup":343}],351:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -32394,7 +32209,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],354:[function(require,module,exports){
+},{}],352:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -32435,7 +32250,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],355:[function(require,module,exports){
+},{}],353:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -32581,7 +32396,7 @@ exports.removeBlobs = function(data, callback) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./is-buffer":357,"isarray":359}],356:[function(require,module,exports){
+},{"./is-buffer":355,"isarray":357}],354:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -32983,7 +32798,7 @@ function error(data){
   };
 }
 
-},{"./binary":355,"./is-buffer":357,"component-emitter":358,"debug":323,"isarray":359,"json3":360}],357:[function(require,module,exports){
+},{"./binary":353,"./is-buffer":355,"component-emitter":356,"debug":321,"isarray":357,"json3":358}],355:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -33001,11 +32816,11 @@ function isBuf(obj) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],358:[function(require,module,exports){
-arguments[4][336][0].apply(exports,arguments)
-},{"dup":336}],359:[function(require,module,exports){
-arguments[4][345][0].apply(exports,arguments)
-},{"dup":345}],360:[function(require,module,exports){
+},{}],356:[function(require,module,exports){
+arguments[4][334][0].apply(exports,arguments)
+},{"dup":334}],357:[function(require,module,exports){
+arguments[4][343][0].apply(exports,arguments)
+},{"dup":343}],358:[function(require,module,exports){
 (function (global){
 /*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
 ;(function () {
@@ -33912,7 +33727,7 @@ arguments[4][345][0].apply(exports,arguments)
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],361:[function(require,module,exports){
+},{}],359:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -33926,15 +33741,6 @@ function toArray(list, index) {
 
     return array
 }
-
-},{}],362:[function(require,module,exports){
-(function (global){
-'use strict'
-module.exports = (typeof self === 'object' && self.self === self && self) ||
-  (typeof global === 'object' && global.global === global && global) ||
-  this
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}]},{},[15])
 

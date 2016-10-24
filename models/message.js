@@ -9,6 +9,7 @@ var messageSchema = new Schema({
               required:true
             },
   user: {type : mongoose.Schema.ObjectId, ref : 'User'},
+  recipient: {type : mongoose.Schema.ObjectId, ref : 'User'},
   dateCreated: {
               type: Date,
               default: Date.now

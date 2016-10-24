@@ -14,13 +14,13 @@ export function currentUser(user = "Amauris") {
 }
 
 export function signout() {
-    $.ajax({ 
-      url: '/api/signout',
-      type: 'POST'
-    })
-      .done((data) => {
-        dispatcher.dispatch({
-         type: "SIGN_OUT"
-         })
-      })
+  $.ajax({ 
+    url: '/api/signout',
+    type: 'POST'
+  })
+    .done((data) => {
+      dispatcher.dispatch({
+        type: "SIGN_OUT"
+       })
+     })
 }

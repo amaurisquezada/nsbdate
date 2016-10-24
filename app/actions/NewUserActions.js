@@ -7,7 +7,6 @@ export function updateNewUser(data) {
     data: data
   })
     .done(() => {
-      console.log(data)
     })
     .fail((err) => {
       console.log(err);

@@ -7282,6 +7282,7 @@ img.mfp-img {
 .nav-buttons {
   border: 0;
   font-family: 'Droid Sans', sans-serif;
+  padding: 6px 20px;
 }
 #vid-container {
   position: fixed;
@@ -7326,6 +7327,16 @@ img.mfp-img {
 #selection-div h3 {
   color: white;
 }
+.label-as-badge {
+  background-color: red;
+  border-radius: 10px;
+  margin-left: 2px;
+  margin-right: 0px;
+}
+.adjustment {
+  padding-right: 0;
+  padding-left: 19.7px;
+}
 .temp-si {
   width: 11vw;
   font-size: 1.02vw;
@@ -7346,21 +7357,25 @@ img.mfp-img {
 #chat-container {
   width: 100%;
   height: 80vh;
-  border: 1px black solid;
+  border: 6px black solid;
+  border-radius: 6px;
 }
 #matched-container {
   width: 30%;
   height: 100%;
-  border-right: 5px solid grey;
+  border-right: 6px solid black;
   overflow-y: auto;
   float: left;
 }
-#message-container {
+.message-container {
   width: 70%;
   height: 100%;
-  border-right: 5px solid black;
   float: left;
   overflow-y: hidden;
+}
+.prompt-background {
+  background: url(../img/shy.jpg) no-repeat;
+  background-size: 100%;
 }
 .messages {
   overflow-y: auto;
@@ -7372,11 +7387,13 @@ img.mfp-img {
 }
 .submit-button {
   max-width: 50px;
+  padding-right: 10px;
 }
 #text-form {
   position: relative;
   height: 26px;
   top: calc(100% - 26px);
+  border-top: 2px solid black;
 }
 #matched-container::-webkit-scrollbar {
   display: none;
@@ -7384,11 +7401,19 @@ img.mfp-img {
 .matches {
   width: 100%;
   height: 11vh;
-  border-top: 1px groove grey;
-  border-bottom: 1px groove grey;
+  border-top: 3px groove black;
+  border-bottom: 3px groove black;
   cursor: pointer;
   line-height: 6.1;
   font-family: 'Roboto', sans-serif;
+}
+.matches:first-of-type {
+  border-top: none;
+  height: calc(11vh - 3px);
+}
+.matches:last-of-type {
+  border-bottom: 6px groove black;
+  height: calc(11vh + 3px);
 }
 .matches h2 {
   display: inline;
@@ -7435,7 +7460,7 @@ img.mfp-img {
 }
 .other-messages .text-messages {
   margin-left: 5px;
-  background-color: lightgrey;
+  background-color: #BFBFBF;
 }
 .my-messages .timestamps {
   font-size: 10px;
@@ -7468,6 +7493,16 @@ img.mfp-img {
   font-size: 10px;
   line-height: 0px;
 }
+.countdown {
+  display: inline;
+  position: absolute;
+  left: 75%;
+  top: 40vw;
+  color: white;
+  text-shadow: 1px 1px 1px black;
+  font-family: 'Droid Sans', sans-serif;
+  font-size: 30px;
+}
 #wait-message {
   font-family: 'Roboto', sans-serif;
   position: absolute;
@@ -7476,9 +7511,21 @@ img.mfp-img {
   color: white;
   text-shadow: 1px 1px black;
 }
-.react-countdown-clock {
-  display: inline-block;
-  width: 9vw;
+.no-messages-yet p {
+  font-family: 'Droid Sans', sans-serif;
+  font-size: 3vw;
+  text-align: center;
+  color: white;
+  text-shadow: 2px 2px 2px black;
+}
+.no-matches p {
+  text-align: center;
+  word-wrap: break-word;
+  font-size: 20px;
+  font-family: 'Droid Sans', sans-serif;
+  width: 60%;
+  margin-top: 20%;
+  margin-left: 20%;
 }
 @media (max-width: 588px) {
   #site-header {

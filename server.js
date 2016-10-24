@@ -121,7 +121,6 @@ app.get('/api/get-convos', function(req, res, next) {
           .exec(function(err, convo) {
           if (err) return next(err);
           res.send(convo);
-          console.log(convo, "from refresh")
         });
     } else {
 
@@ -130,7 +129,6 @@ app.get('/api/get-convos', function(req, res, next) {
           .exec(function(err, convo) {
           if (err) return next(err);
           res.send(convo);
-          console.log(convo, "from refresh female")
         });
     }
 });
@@ -159,7 +157,6 @@ app.put('/api/amtc', function(req, res, next) {
   var id = req.body.convoId
   Conversation.findById(id, function(err, convo) {
     if (err) return next(err);
-      console.log(err)
     if (!convo) {
       return res.status(404).send({ message: 'Convo not found.' });
     }
@@ -192,16 +189,63 @@ app.get('/api/currentUser', function(req, res, next) {
 
 app.get('/api/rpc', function(req, res, next) {
   var id = req.session.user.cuid
-  console.log(id, "from new api")
   User.findOne({ cuid: id }, function(err, user) {
     if (err) return next(err);
       console.log(err)
     if (!user) {
       return res.status(404).send({ message: 'User not found.' });
     }
-    console.log(user.previousChats, "pc from new api")
     res.send(user.previousChats)
   });
+});
+
+app.get('/api/get-notifications', function(req, res, next) {
+  // var id = req.session.user._id,
+  var id = req._parsedOriginalUrl.query;
+  console.log(id, "from req query")
+  
+  User.findOne({ _id: id }, function(err, user) {
+    if (err) return next(err);
+    if (!user) {
+      return res.status(404).send({ message: 'User not found.' });
+    }
+    console.log(user._id, "from notif api mate")
+    var stack = []
+
+    var lastClickedChats = user.lastClickedChats
+
+    stack.push(function (callback) {
+        Conversation.find({
+      $and: [
+          { $or: [{user1: id}, {user2: id}] },
+          {dateCreated: { $gt: lastClickedChats}}
+      ]
+  }, function(err, results){
+          callback(null, results.length)
+          console.log(results, "conversation")
+        })
+    })
+
+    stack.push(function (callback){
+      Message.find({'recipient': id, dateCreated: { $gt: lastClickedChats}}, function (err, results){
+        callback(null, results.length)
+      })
+    })
+
+    async.parallel(stack, function(err, result){
+      if (err) {
+        console.log(err)
+        return;
+      }
+      console.log(result, "from async before adding")
+      var sum = result.reduce(function(a, b){return a + b}, 0)
+      console.log(sum, "from async")
+      res.send({amount:sum})
+    })
+
+  });
+
+
 });
 
 
@@ -247,7 +291,6 @@ app.put('/api/user/:id', function(req, res, next) {
   var id = req.session.user_id;
   User.findOne({ id: id }, function(err, user) {
     if (err) return next(err);
-      console.log(err)
     if (!user) {
       return res.status(404).send({ message: 'User not found.' });
     }
@@ -261,7 +304,6 @@ app.put('/api/atpc', function(req, res, next) {
   var id = req.body.myId
   User.findOne({ cuid: id }, function(err, user) {
     if (err) return next(err);
-      console.log(err)
     if (!user) {
       return res.status(404).send({ message: 'User not found.' });
     }
@@ -295,7 +337,6 @@ socket.on('disconnect', function(){
   var id = this.id,
   clientId = id.substring(2),
   cuid = this.cuid
-  console.log(this.gender, "before conditional")
   if (this.gender == "male"){
     allConnectedMen = _.reject(allConnectedMen, function(el) { return el.cuid === cuid; });
     menSeekingWomen = _.reject(menSeekingWomen, function(el) { return el.cuid === cuid; });
@@ -356,10 +397,8 @@ socket.on('addToWsm', function(payload){
           notMatched = true
         }
     }
-    console.log(womenSeekingMen, "FROM THE ADD TO WSM")
     if ((newSignIn) || (addedToWsm && notMatched)){
       eligible ? io.to("maleRoom").emit('usersChange', eligible.cuid) : io.to("maleRoom").emit('usersChange', user.cuid)
-      console.log("New Sign in: " + newSignIn + "- addedToWsm: " + addedToWsm + "- not matched: " + notMatched + " FROM WSM")
     }
   })
 })
@@ -395,7 +434,6 @@ socket.on('fetchFromWsm', function(payload){
     }
     if ((newSignIn) || (addedToMsw && notMatched)){
        selection ? io.to('femaleRoom').emit('usersChange', selection.peerCuid) : io.to('femaleRoom').emit('usersChange', user.cuid)
-      console.log("New Sign in: " + newSignIn + "- addedToMsw: " + addedToMsw + "- not matched: " + notMatched + " from FETCH")
     }
   })
 })
@@ -409,7 +447,6 @@ socket.on('liked', function(payload) {
 
   User.findOne({ cuid: payload.myId }, function(err, user) {
     if (err) return next(err);
-      console.log(err)
     if (!user) {
       return res.status(404).send({ message: 'User not found.' });
     }
@@ -424,6 +461,13 @@ socket.on('sendSocket', function(payload) {
   this.broadcast.to('/#'+ payload.destination).emit('peerSocket', payload.socketId)
 })
 
+socket.on('timerEvent', function(payload) {
+  this.join(payload.user1 + payload.user2)
+  setTimeout(function(){
+    io.to(payload.user1 + payload.user2).emit("startTimer")
+  }, 3000)
+})
+
 socket.on('likeToo', function(payload){
   var female = payload.myGender == "Female" ? payload.myId : payload.peerId;
   var male = payload.myGender == "Male" ? payload.myId : payload.peerId;
@@ -431,7 +475,6 @@ socket.on('likeToo', function(payload){
 
   User.findOne({ cuid: female }, function(err, user) {
     if (err) return next(err);
-      console.log(err)
     if (!user) {
       return res.status(404).send({ message: 'User not found.' });
     }
@@ -440,7 +483,6 @@ socket.on('likeToo', function(payload){
 
   User.findOne({ cuid: male }, function(err, otherUser) {
     if (err) return next(err);
-      console.log(err)
     if (!otherUser) {
       return res.status(404).send({ message: 'User not found.' });
     }
@@ -463,6 +505,10 @@ socket.on('likeToo', function(payload){
     otherUser.conversations.push(convo);
     user.save();
     otherUser.save();
+    setTimeout(function(){
+      io.to(user1._id).emit('updateNotifications', user1._id)
+      io.to(user2._id).emit('updateNotifications', user2._id)
+    }, 1000)
   });
 });
 
@@ -486,8 +532,13 @@ socket.on('setLastConvo', function(payload){
 })
 
 socket.on('subscribe', function(room) { 
-        console.log('joining room', room);
         socket.join(room); 
+})
+
+socket.on('updateUserLastClick', function(userId){
+  User.findByIdAndUpdate(userId, {$set: {lastClickedChats: Date.now()}}, {new: true}, function(err, user) {
+          if (err) return next(err);
+  }); 
 })
 
 socket.on('updateLastClicked', function(payload) {
@@ -503,16 +554,19 @@ socket.on('updateLastClicked', function(payload) {
 socket.on('newMessage', function(payload){
   Conversation.findById(payload.convoId, function(err, convo) {
     if (err) return next(err);
-      console.log(err)
     var message = new Message({
       text: payload.text,
-      user: payload.authorId
+      user: payload.authorId,
+      recipient: payload.recipient
     });
     message.save()
     convo.messages.push(message)
     convo.save()
     io.to(payload.convoId).emit('updateMessages', convo)
-    console.log(convo._id, "from new message on server")
+    console.log(payload.recipient, "recipient from new message on server")
+    setTimeout(function(){
+      io.to(payload.recipient).emit('updateNotifications', payload.recipient)
+    }, 200)
   });
 })
 

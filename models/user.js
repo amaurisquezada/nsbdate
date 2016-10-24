@@ -31,6 +31,10 @@ var userSchema = new Schema({
               type: Boolean,
               required: true
             },
+  lastClickedChats: {
+              type: Date,
+              default: Date.now
+            },
   dateCreated: {
               type: Date,
               default: Date.now

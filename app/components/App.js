@@ -21,7 +21,6 @@ export class App extends React.Component {
   componentDidMount() {
     if (!this.state.user.cuid){
       this.receiveUser(localStorage.user)
-      console.log(localStorage.user, "from app mount")
     }   
   }
 

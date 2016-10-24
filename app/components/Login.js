@@ -1,6 +1,4 @@
-import React, { PropTypes as T } from 'react'
-import { Button } from 'react-bootstrap'
-import * as AppActions from '../actions/AppActions'
+import React from 'react'
 
 export class Login extends React.Component {
 
@@ -16,7 +14,7 @@ export class Login extends React.Component {
           <p>Real-time dating app for the modern skeptic</p>
           <a href="http://localhost:3000/login/facebook" className='btn btn-primary'>Sign-in/Sign up with Facebook</a>
         </div>
-       </div>
+      </div>
     )
   }
 }
