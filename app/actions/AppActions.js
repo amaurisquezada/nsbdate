@@ -1,9 +1,8 @@
 import dispatcher from '../dispatcher'
 
-export function currentUser(user = "Amauris") {
+export function currentUser() {
   $.ajax({
-    url: '/api/currentUser', 
-    data: user
+    url: '/api/currentUser'
   })
     .done((data) => {
       dispatcher.dispatch({

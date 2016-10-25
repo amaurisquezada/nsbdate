@@ -102,6 +102,7 @@
 	font-size: 1.02vw;
 	padding: .7vw 1.02vw;
 	font-family: 'Droid Sans', sans-serif;
+	display: none;
 }
 
 .hidden {
@@ -141,8 +142,8 @@
 }
 
 .prompt-background {
-	background: url(../img/shy.jpg) no-repeat;
-	background-size: 100%;
+	background: url(../img/shy.jpg) center center no-repeat;
+	background-size: cover;
 }
 
 .messages {
@@ -326,9 +327,43 @@ font-family: 'Droid Sans', sans-serif;
 	margin-left: 20%;
 }
 
+.awk-background {
+	background-color: black;
+}
+
+.awk-text {
+	color: white;
+	font-size: 5vw;
+	font-family: 'Pinyon Script', cursive;
+	text-align: center;
+}
+
+.no-matches-messages {
+	margin-top: 20%;
+}
+
+.no-connected-users {
+	  background: url(../img/confused.png) center center no-repeat;
+    background-size: cover;
+    width: 75%;
+    height: 83%;
+    position: absolute;
+    border: black 3px solid;
+    margin-left: 4%;
+}
+
+.ncu-mssg {
+	font-size: 1.6vw;
+	width: 50%;
+}
+
 
 @media (max-width: 588px) {
   #site-header{
     font-size: 17.9928px;
   }
+  .ncu-mssg {
+		font-size: 13px;
+		font-family: 'Roboto', sans-serif;
+	}
 }

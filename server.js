@@ -26,60 +26,64 @@ var _ = require('underscore'),
     menSeekingWomen = [],
     womenSeekingMen = [];
 
+//MongoDB Connection.
 mongoose.connect(config.database);
 mongoose.connection.on('error', function() {
   console.info('Error: Could not connect to MongoDB. Did you forget to run `mongod`?');
 });
 
-// passport.use(new Strategy({
-//     clientID: process.env.CLIENT_ID,
-//     clientSecret: process.env.CLIENT_SECRET,
-//     callbackURL: 'http://localhost:3000/login/facebook/return'
-//   },
+//Passport strategy for the facebook login.
+passport.use(new Strategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: 'http://nsbdate.com:3000/login/facebook/return'
+  },
 
-//   function(accessToken, refreshToken, profile, cb) {
-//     User.findOne({'facebook.id': profile.id}, function(err, user) {
-//             if (err) {
-//                 return cb(err);
-//             }
-//             //No user was found... so create a new user with values from Facebook (all the profile. stuff)
-//             if (!user) {
-//                 user = new User({
-//                     firstName: profile.displayName.split(" ")[0],
-//                     lastName: profile.displayName.split(" ")[1],
-//                     age: 21,
-//                     cuid: cuid(),
-//                     gender: "Female",
-//                     location: "New York City",
-//                     available: false,
-//                     previousChats: [],
-//                     facebook: profile._json
-//                 });
-//                 user.save(function(err) {
-//                     if (err) console.log(err);
-//                     return cb(err, user);
-//                 });
-//             } else {
-//                 //found user. Return
-//                 return cb(err, user);
-//             }
-//         });
-//   }
-// ));
+  //Function that handles the return from FB. Either signs-in the user if he/she is in the DB or creates the new user. 
+  function(accessToken, refreshToken, profile, cb) {
+    User.findOne({'facebook.id': profile.id}, function(err, user) {
+            if (err) {
+                return cb(err);
+            }
+            if (!user) {
+                user = new User({
+                    firstName: profile.displayName.split(" ")[0],
+                    lastName: profile.displayName.split(" ")[1],
+                    age: 21,
+                    cuid: cuid(),
+                    gender: "Female",
+                    location: "New York City",
+                    available: false,
+                    lastClickedChats: new Date(),
+                    previousChats: [],
+                    likes: [],
+                    conversations: [],
+                    lastConvo: {},
+                    facebook: profile._json
+                });
+                user.save(function(err) {
+                    if (err) console.log(err);
+                    return cb(err, user);
+                });
+            } else {
+                return cb(err, user);
+            }
+        });
+  }
+));
 
+//Serializes and deserializes the user for use in the session.
+passport.serializeUser(function (user, cb) {
+    cb(null, user);
+});
 
-// passport.serializeUser(function (user, cb) {
-//     cb(null, user);
-// });
+passport.deserializeUser(function (user, cb) {
+    User.findById(user, function (err, user) {
+        cb(err, user);
+    });
+});
 
-// passport.deserializeUser(function (user, cb) {
-//     //If using Mongoose with MongoDB; if other you will need JS specific to that schema
-//     User.findById(user, function (err, user) {
-//         cb(err, user);
-//     });
-// });
-
-
+//Express middleware
 var app = express();
 
 app.set('port', process.env.PORT || 3000);
@@ -88,12 +92,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(require('express-session')({ secret: 'keyboard kitten', resave: false, saveUninitialized: true }));
-
-
-
-// app.use(passport.initialize());
-// app.use(passport.session());
-
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.get('/api/users', function(req, res, next) {
   User.find()
@@ -105,27 +105,25 @@ app.get('/api/users', function(req, res, next) {
     });
 });
 
+//Api to retrieve all the user's conversations for the Chat component.
+
 app.get('/api/get-convos', function(req, res, next) {
-  var gender = req.session.user.gender == "Male" ? "Male" : "Female"
-  if (gender == "Male") {
-      Conversation
-          .find({'user2': req.session.user._id})
-          .exec(function(err, convo) {
-          if (err) return next(err);
-          res.send(convo);
-        });
-    } else {
-        Conversation
-            .find({'user1': req.session.user._id})
-            .exec(function(err, convo) {
+  // var id = req.session.user._id;
+  var id = req.session.passport.user._id;
+  Conversation
+      .find({ $or: [{user1: id}, {user2: id}] })
+      .exec(function(err, convo) {
             if (err) return next(err);
             res.send(convo);
-          });
-      }
+        });
 });
 
+//Api to retrieve user's last conversations so that it is in focus when user revisits.
+
 app.get('/api/get-last-convo', function(req, res, next){
-  User.findById(req.session.user._id, function(err, user) {
+  // var id = req.session.user._id;
+  var id = req.session.passport.user._id;
+  User.findById(id, function(err, user) {
     if (err) return next(err);
     if (!_.isEmpty(user.lastConvo)) {
       Conversation.findById(user.lastConvo._id, function(err2, convo) {
@@ -142,6 +140,8 @@ app.get('/api/get-last-convo', function(req, res, next){
         }
   });
 });
+
+//Api to add a new message to the conversation sent in the request.
 
 app.put('/api/amtc', function(req, res, next) {
   var id = req.body.convoId;
@@ -161,24 +161,27 @@ app.put('/api/amtc', function(req, res, next) {
   });
 });
 
-
-
+//Retrieves current user after the facebook login.
 
 app.get('/api/currentUser', function(req, res, next) {
-	User
-			.findOne({'firstName': req._parsedOriginalUrl.query})
-			.exec(function(err, user) {
-      if (err) return next(err);
-      req.session.user = user;
-      res.send(user);
-    });
-  // if(req.session.passport){
-  //   return res.send(req.session.passport.user);
-  // }
+	// User
+	// 		.findOne({'firstName': req._parsedOriginalUrl.query})
+	// 		.exec(function(err, user) {
+ //      if (err) return next(err);
+ //      req.session.user = user;
+ //      res.send(user);
+ //    });
+  if(req.session.passport){
+    return res.send(req.session.passport.user);
+  }
 });
 
+//Api to retrieve the user's previous chats for the video component. Necessary because users many not video match with other users they have
+//already confrenced with.
+
 app.get('/api/rpc', function(req, res, next) {
-  var id = req.session.user.cuid;
+  // var id = req.session.user.cuid;
+  var id = req.session.passport.user.cuid;
   User.findOne({ cuid: id }, function(err, user) {
     if (err) return next(err);
     if (!user) {
@@ -188,9 +191,13 @@ app.get('/api/rpc', function(req, res, next) {
   });
 });
 
+//Api to retrieve appropriate number of badge notifications for the Chat button in the NavBar. Total notifications are the sum
+//of conversations and messages newer than the last time the Chat component was clicked. 
+
 app.get('/api/get-notifications', function(req, res, next) {
-  // var id = req.session.user._id,
-  var id = req._parsedOriginalUrl.query;
+  // var id = req.session.user._id;
+  // var id = req._parsedOriginalUrl.query;
+  var id = req.session.passport.user._id;
   User.findOne({ _id: id }, function(err, user) {
     if (err) return next(err);
     if (!user) {
@@ -233,34 +240,23 @@ app.post('/api/signout', function(req, res){
   res.redirect('/')
 })
 
-// app.post('/api/wsm', function(req, res){
-// 	console.log(req.body.cuid)
-// 	womenSeekingMen.push(req.body.cuid)
-// 	console.log(womenSeekingMen)
-// })
 
-// app.get('/api/get-woman-id', function(req, res, next){
-// 	console.log(womenSeekingMen)
-// })
+//Passport's facebook authentication handling.
 
+app.get('/login/facebook', passport.authenticate('facebook'));
 
-
-
-// app.get('/login/facebook',
-//   passport.authenticate('facebook'));
-
-// app.get('/login/facebook/return', 
-//   passport.authenticate('facebook', { failureRedirect: '/login' }),
-//   function(req, res) {
-//     if(req.session.passport.user.dateCreated.getTime() + 60000 > Date.now()) {
-//       res.redirect('/newuser');
-//     }else {
-//       res.redirect('/');
-//     }
-//   });
+app.get('/login/facebook/return', 
+  passport.authenticate('facebook', { failureRedirect: '/login' }),
+  function(req, res) {
+    if(req.session.passport.user.dateCreated.getTime() + 60000 > Date.now()) {
+      res.redirect('/newuser');
+    }else {
+      res.redirect('/');
+    }
+});
 
 
-// app.get('/', require('connect-ensure-login').ensureLoggedIn());
+app.get('/', require('connect-ensure-login').ensureLoggedIn());
 
 app.get('/')
 
@@ -277,6 +273,8 @@ app.put('/api/user/:id', function(req, res, next) {
   });
 });
 
+//Api adds matched users to current user's 'previousChats' attribute.
+
 app.put('/api/atpc', function(req, res, next) {
   var id = req.body.myId;
   User.findOne({ cuid: id }, function(err, user) {
@@ -291,6 +289,8 @@ app.put('/api/atpc', function(req, res, next) {
 });
 
 
+//Peer.js server connection.
+
 var server = require('http').createServer(app),
     options = {debug: true};
 
@@ -298,10 +298,15 @@ app.use('/connect', ExpressPeerServer(server, options));
 
 var io = require('socket.io')(server);
 
+//Socket event listeners.
+
 io.sockets.on('connection', function(socket){
+
+  //When socket disconnects, the appropriate user is removed from the server variables that manage connected users. Also emits an event to 
+  //opposite sex to relay a user change.
+
   socket.on('disconnect', function(){
-    var id = this.id,
-    clientId = id.substring(2),
+    var clientId = this.id.substring(2),
     cuid = this.cuid;
     if (this.gender == "male"){
       allConnectedMen = _.reject(allConnectedMen, function(el) { return el.cuid === cuid; });
@@ -314,6 +319,8 @@ io.sockets.on('connection', function(socket){
       }
   });
 
+  //Socket joins room dependent on the user's gender.
+
   socket.on('joinRoom', function(user){
     if (user.gender === "Female"){
       this.gender = "female";
@@ -325,6 +332,8 @@ io.sockets.on('connection', function(socket){
         this.join('maleRoom');
       }
   });
+
+  //Matching logic for female users.
 
   socket.on('addToWsm', function(payload){
     var self = this, newSignIn, addedToWsm, notMatched;
@@ -357,6 +366,8 @@ io.sockets.on('connection', function(socket){
       }
     })
   })
+
+  //Matching logic for male users.
 
   socket.on('fetchFromWsm', function(payload){
     var self = this, selection, newSignIn, addedToMsw, notMatched;
@@ -392,10 +403,14 @@ io.sockets.on('connection', function(socket){
     });
   });
 
+  //Event handler for when a user rejects a matched user.
+
   socket.on('rejected', function(payload) {
     var id = this.id.substring(2);
     this.broadcast.to('/#' + payload).emit('closeEvent', id);
   })
+
+  //Event handler for when a user likes a matched user. Initial liker sends a selection request to the macthed user.
 
   socket.on('liked', function(payload) {
     User.findOne({ cuid: payload.myId }, function(err, user) {
@@ -413,12 +428,8 @@ io.sockets.on('connection', function(socket){
     this.broadcast.to('/#'+ payload.destination).emit('peerSocket', payload.socketId);
   })
 
-  socket.on('timerEvent', function(payload) {
-    this.join(payload.user1 + payload.user2);
-    setTimeout(function(){
-      io.to(payload.user1 + payload.user2).emit("startTimer");
-    }, 3000);
-  });
+  //Event handler for when a user who has been liked reciprocates a like. A conversation with both participants is created and an
+  //event to update both user's badge notifications is emitted.
 
   socket.on('likeToo', function(payload){
     var female = payload.myGender == "Female" ? payload.myId : payload.peerId,
@@ -463,6 +474,19 @@ io.sockets.on('connection', function(socket){
     });
   });
 
+  //Event to help synchronize video confrencing timers for both users.
+
+  socket.on('timerEvent', function(payload) {
+    this.join(payload.user1 + payload.user2);
+    setTimeout(function(){
+      io.to(payload.user1 + payload.user2).emit("startTimer");
+    }, 3000);
+  });
+
+  //Sets the current conversation's lastCLicked attribute for the current user.
+  //Each conversation has a lastClicked attribute for each user to help facilitate how new message notifications are rendered in 
+  //the chat component.
+
   socket.on('setLastConvo', function(payload){
     var _this = this;
     User.findById(payload.userId, function(err, user) {
@@ -483,11 +507,16 @@ io.sockets.on('connection', function(socket){
     socket.join(room); 
   });
 
+
   socket.on('updateUserLastClick', function(userId){
     User.findByIdAndUpdate(userId, {$set: {lastClickedChats: Date.now()}}, {new: true}, function(err, user) {
       if (err) return next(err);
     }); 
   });
+
+  //Sets the current conversation's lastCLicked attribute for the current user.
+  //Each conversation has a lastClicked attribute for each user to help facilitate how new message notifications are rendered in 
+  //the chat component.
 
   socket.on('updateLastClicked', function(payload) {
     var _this = this,
@@ -498,6 +527,10 @@ io.sockets.on('connection', function(socket){
       if (err) return next(err);
     });
   });
+
+  //Socket handler for when a user sends a message to another user. The message is created, added to the conversation and two events are
+  //emitted. One to trigger a re-render on the Chat compnonent. The other to update the notifications badge if the recipient user is
+  //not currently in the Chat component.
 
   socket.on('newMessage', function(payload){
     Conversation.findById(payload.convoId, function(err, convo) {
@@ -510,18 +543,20 @@ io.sockets.on('connection', function(socket){
       message.save();
       convo.messages.push(message);
       convo.save();
-      io.to(payload.convoId).emit('updateMessages', convo);
       setTimeout(function(){
+        io.to(payload.convoId).emit('updateMessages', convo);
         io.to(payload.recipient).emit('updateNotifications', payload.recipient);
       }, 200);
     });
   });
-})
+
+});
 
 server.listen(app.get('port'), function() {
   console.log('Peer Express server listening on port ' + app.get('port'));
 });
 
+//Sets app's routing using the react router.
 
 app.use(function(req, res) {
   Router.match({ routes: routes.default, location: req.url }, function(err, redirectLocation, renderProps) {

@@ -20,7 +20,7 @@ export class App extends React.Component {
 
   componentDidMount() {
     if (!this.state.user.cuid){
-      this.receiveUser(localStorage.user)
+      AppActions.currentUser()
     }   
   }
 
@@ -32,9 +32,11 @@ export class App extends React.Component {
     this.setState({user: AppStore.getUser()})
   }
 
-  receiveUser(name) {
-    AppActions.currentUser(name)
-  }
+  //Temporary function for development
+
+  // receiveUser(name) {
+  //   AppActions.currentUser(name)
+  // }
 
   render() {
 	  const childrenWithProps = React.Children.map(this.props.children, (child) => React.cloneElement(child, {

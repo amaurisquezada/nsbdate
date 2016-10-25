@@ -44,7 +44,8 @@ export default class Video extends React.Component {
 			waiting: true,
 			streaming: false,
 			previousChats: [],
-			counter: 60
+			counter: 60,
+      noneAvailable: false
 		}
 	}
 
@@ -52,7 +53,7 @@ export default class Video extends React.Component {
 		const peerId = this.props.user.cuid,
 		fn = this.props.user.firstName,
 		age = this.props.user.age;
-		this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: {cuid:peerId, firstName: fn, age: age}})
+		this.peer = new Peer({ host: 'nsbdate.com', port: 3000, debug: 3, path: '/connect', metadata: {cuid:peerId, firstName: fn, age: age}})
 		this.peer.on('open', this.nextMatch)
 		this.peer.on('call', this.onCall)
 		this.peer.on('error', this.error)
@@ -140,7 +141,8 @@ export default class Video extends React.Component {
 		      	peerCuid: payload.peerCuid,
 		      	peerName: payload.peerName,
 		      	peerAge: payload.peerAge,
-		      	waiting: false
+		      	waiting: false,
+            noneAvailable: false
 	      	})
 	      	const call = this.peer.call(payload.peerId, mediaStream, {metadata: {
 		      	peerSocket: this.socket.id, 
@@ -189,11 +191,11 @@ export default class Video extends React.Component {
 	}
 
 	notAvailable() {
-		this.setState({waiting: true})
+		this.setState({waiting: true, noneAvailable: false})
 	}
 
 	noEligibleUsers() {
-		this.setState({waiting: true})
+		this.setState({waiting: true, noneAvailable: true})
 	}
 
 	usersChange(payload) {
@@ -228,7 +230,8 @@ export default class Video extends React.Component {
 	    	peerCuid: call.metadata.peerCuid,
 	    	peerName: call.metadata.peerName,
 	    	peerAge: call.metadata.peerAge,
-	    	waiting: false
+	    	waiting: false,
+        noneAvailable: false
 	    })
       call.answer(mediaStream)
       this.streamHandler(call)
@@ -239,7 +242,6 @@ export default class Video extends React.Component {
 	error(err) {
 		console.log(err.message);
 	}
-
 
 	streamHandler (call) {
 	  const user1 = this.props.user.gender ==="Female" ? this.props.user.cuid : this.state.peerCuid,
@@ -278,20 +280,27 @@ export default class Video extends React.Component {
 		rightButtonClass = buttonStatus ? "disabled-button" : "text-success g-arrows";
 		return (
 			<div>
-				<div id="vid-container">
-					<video id='my-video' src={this.state.waiting ? null : mySource} autoPlay >
-					</video>
-					<video id='other-video' src={this.state.waiting ? '/videos/static3.mp4' : otherSource} autoPlay muted={this.state.waiting} loop={this.state.waiting}>
-					</video>
-					<div id="left-button-container">
-            <p className="arrow-labels">Not for me</p>
-            <Glyphicon glyph="arrow-left" className={leftButtonClass} onClick={buttonStatus ? null : this.reject} ></Glyphicon>
+        <Display if={this.state.noneAvailable}>
+          <div className="no-connected-users">
+            <p className="ncu-mssg">There are no eligilble users for you to connect with at the moment. Please wait for more users to sign in or try again later.</p>
           </div>
-          <div id="right-button-container">
-            <p className="arrow-labels">Like!</p>
-            <Glyphicon glyph="arrow-right" className={rightButtonClass} onClick={buttonStatus ? null : this.likeHandler} ></Glyphicon>
-          </div>
-				</div>
+        </Display>
+        <Display if={!this.state.noneAvailable}>
+  				<div id="vid-container">
+  					<video id='my-video' src={this.state.waiting ? null : mySource} autoPlay >
+  					</video>
+  					<video id='other-video' src={this.state.waiting ? '/videos/static3.mp4' : otherSource} autoPlay muted={this.state.waiting} loop={this.state.waiting}>
+  					</video>
+  					<div id="left-button-container">
+              <p className="arrow-labels">Not for me</p>
+              <Glyphicon glyph="arrow-left" className={leftButtonClass} onClick={buttonStatus ? null : this.reject} ></Glyphicon>
+            </div>
+            <div id="right-button-container">
+              <p className="arrow-labels">Like!</p>
+              <Glyphicon glyph="arrow-right" className={rightButtonClass} onClick={buttonStatus ? null : this.likeHandler} ></Glyphicon>
+            </div>
+  				</div>
+        </Display>
 				<Display if={this.state.peerName && this.state.peerAge && !this.state.waiting}>
 					<div className="peer-name-wrapper">
 						<p className="name-age">{this.state.peerName + ", " + this.state.peerAge}</p>
@@ -301,7 +310,7 @@ export default class Video extends React.Component {
 				<Display if={this.state.streaming}>
 					<h3 className="countdown">{this.state.counter}</h3>
 				</Display>
-				<Display if={this.state.waiting}>
+				<Display if={this.state.waiting && !this.state.noneAvailable}>
 					<h2 id="wait-message">Please wait to be matched</h2>
 				</Display>
 				<Display if={this.state.selecting}>

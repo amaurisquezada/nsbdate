@@ -87,7 +87,7 @@ export default class Chat extends React.Component {
   }
 
   componentDidUpdate() {
-	  	if (this.shouldScrollBottom) {
+	  if (this.shouldScrollBottom) {
 	    const node = ReactDOM.findDOMNode(this.refs.chatDiv)
 	    node.scrollTop = node.scrollHeight
 	  }
@@ -178,8 +178,10 @@ export default class Chat extends React.Component {
                         <p>Don't be shy...say hello!</p>
                       </div>;
       } else {
-          messageClass = "message-container chat-background"
-          messageList = <div className = "no-matches-messages"></div>;
+          messageClass = "message-container awk-background"
+          messageList = <div className="no-matches-messages">
+                          <h1 className="awk-text">Well, this is awkward...</h1>
+                        </div>;
   }
     const buttonColor = !this.state.input || !this.state.currentConvo ? {color : "grey"} : {color : "black"}
 		return (

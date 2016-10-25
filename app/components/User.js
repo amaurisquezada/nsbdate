@@ -12,14 +12,15 @@ export class User extends React.Component {
 
   constructor() {
     super()
-    this.check = this.check.bind(this)
+    //For development purposes.
+    // this.check = this.check.bind(this)
+    // this.amauris = this.amauris.bind(this)
+    // this.austin = this.austin.bind(this)
+    // this.maia = this.maia.bind(this)
+    // this.diffchick = this.diffchick.bind(this)
+    // this.lastgirl = this.lastgirl.bind(this)
+    // this.reggie = this.reggie.bind(this)
     this.seekToggle = this.seekToggle.bind(this)
-    this.amauris = this.amauris.bind(this)
-    this.austin = this.austin.bind(this)
-    this.maia = this.maia.bind(this)
-    this.diffchick = this.diffchick.bind(this)
-    this.lastgirl = this.lastgirl.bind(this)
-    this.reggie = this.reggie.bind(this)
     this.updateNotifications = this.updateNotifications.bind(this)
     this.state = {
       user: UserStore.getUser(),
@@ -38,9 +39,12 @@ export class User extends React.Component {
   componentDidMount() {
     this.socket = io()
     this.socket.on("updateNotifications", this.updateNotifications)
-    if (this.props.user._id){
-      this.socket.emit('subscribe', this.props.user._id)
-    }
+    AppActions.currentUser()
+    setTimeout(() => {
+      if (this.props.user._id){
+        this.socket.emit('subscribe', this.props.user._id)
+      }
+    }, 200)
   }
 
   componentWillUnmount() {
@@ -50,74 +54,75 @@ export class User extends React.Component {
   }
 
   seekToggle() {
-    const user = this.state.user
+    let user = this.state.user
     user.available = !user.available
     this.setState({user: user})
-  }
-
-  check() {
-    console.log(this.state.user, "state.user")
-    console.log(this.props, "props")
   }
 
   updateNotifications(userId) {
     NavActions.getNotifications(userId)
   }
 
+//Temporary Sign in functions for development
 
-  amauris() {
-    AppActions.currentUser('Amauris')
-    this.setState({tempSi:false})
-    setTimeout(() => {
-      NavActions.getNotifications(this.props.user._id)
-      this.socket.emit('subscribe', this.props.user._id)
-    }, 200)
-  }
+  // check() {
+  //   console.log(this.state.user, "state.user")
+  //   console.log(this.props, "props")
+  // }
 
-  austin() {
-    AppActions.currentUser('Austin')
-    this.setState({tempSi:false})
-    setTimeout(() => {
-      NavActions.getNotifications(this.props.user._id)
-      this.socket.emit('subscribe', this.props.user._id)
-    }, 200)
-  }
+  // amauris() {
+  //   AppActions.currentUser('Amauris')
+  //   this.setState({tempSi:false})
+  //   setTimeout(() => {
+  //     NavActions.getNotifications(this.props.user._id)
+  //     this.socket.emit('subscribe', this.props.user._id)
+  //   }, 200)
+  // }
 
-  maia() {
-    AppActions.currentUser('Maia')
-    this.setState({tempSi:false})
-    setTimeout(() => {
-      NavActions.getNotifications(this.props.user._id)
-      this.socket.emit('subscribe', this.props.user._id)
-    }, 200)
-  }
+  // austin() {
+  //   AppActions.currentUser('Austin')
+  //   this.setState({tempSi:false})
+  //   setTimeout(() => {
+  //     NavActions.getNotifications(this.props.user._id)
+  //     this.socket.emit('subscribe', this.props.user._id)
+  //   }, 200)
+  // }
 
-  diffchick() {
-    AppActions.currentUser('Diff')
-    this.setState({tempSi:false})
-    setTimeout(() => {
-      NavActions.getNotifications(this.props.user._id)
-      this.socket.emit('subscribe', this.props.user._id)
-    }, 200)
-  }
+  // maia() {
+  //   AppActions.currentUser('Maia')
+  //   this.setState({tempSi:false})
+  //   setTimeout(() => {
+  //     NavActions.getNotifications(this.props.user._id)
+  //     this.socket.emit('subscribe', this.props.user._id)
+  //   }, 200)
+  // }
 
-  lastgirl() {
-    AppActions.currentUser('Last')
-    this.setState({tempSi:false})
-    setTimeout(() => {
-      NavActions.getNotifications(this.props.user._id)
-      this.socket.emit('subscribe', this.props.user._id)
-    }, 200)
-  }
+  // diffchick() {
+  //   AppActions.currentUser('Diff')
+  //   this.setState({tempSi:false})
+  //   setTimeout(() => {
+  //     NavActions.getNotifications(this.props.user._id)
+  //     this.socket.emit('subscribe', this.props.user._id)
+  //   }, 200)
+  // }
 
-  reggie() {
-    AppActions.currentUser('Reggie')
-    this.setState({tempSi:false})
-    setTimeout(() => {
-      NavActions.getNotifications(this.props.user._id)
-      this.socket.emit('subscribe', this.props.user._id)
-    }, 200)
-  }
+  // lastgirl() {
+  //   AppActions.currentUser('Last')
+  //   this.setState({tempSi:false})
+  //   setTimeout(() => {
+  //     NavActions.getNotifications(this.props.user._id)
+  //     this.socket.emit('subscribe', this.props.user._id)
+  //   }, 200)
+  // }
+
+  // reggie() {
+  //   AppActions.currentUser('Reggie')
+  //   this.setState({tempSi:false})
+  //   setTimeout(() => {
+  //     NavActions.getNotifications(this.props.user._id)
+  //     this.socket.emit('subscribe', this.props.user._id)
+  //   }, 200)
+  // }
 
   render() {
     const matching = this.state.user.available ? "Stop matching" : "Start matching!",
@@ -126,13 +131,17 @@ export class User extends React.Component {
     return(
       <div className="container">
         <NavBar user={this.state.user} />
+
+{/* Temporary buttons for development
+
         <Button onClick={this.check} className={tempSi}>See State</Button>
         <Button onClick={this.amauris} className={tempSi}>Sign in as Amauris</Button>
         <Button onClick={this.austin} className={tempSi}>Sign in as Austin</Button>
         <Button onClick={this.maia} className={tempSi}>Sign in as Maia</Button>
         <Button onClick={this.diffchick} className={tempSi}>Sign in as Diff Chick</Button>
         <Button onClick={this.lastgirl} className={tempSi}>Sign in as Last Girl</Button>
-        <Button onClick={this.reggie} className={tempSi}>Sign in as Reggie</Button>
+        <Button onClick={this.reggie} className={tempSi}>Sign in as Reggie</Button> */}
+        
         <Display if={this.state.user.available}>
           <Video user={this.state.user}/>
         </Display>

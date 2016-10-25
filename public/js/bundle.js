@@ -14,11 +14,8 @@ var _dispatcher2 = _interopRequireDefault(_dispatcher);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function currentUser() {
-  var user = arguments.length <= 0 || arguments[0] === undefined ? "Amauris" : arguments[0];
-
   $.ajax({
-    url: '/api/currentUser',
-    data: user
+    url: '/api/currentUser'
   }).done(function (data) {
     _dispatcher2.default.dispatch({
       type: "CURRENT_USER",
@@ -220,7 +217,7 @@ var App = exports.App = function (_React$Component) {
     key: 'componentDidMount',
     value: function componentDidMount() {
       if (!this.state.user.cuid) {
-        this.receiveUser(localStorage.user);
+        AppActions.currentUser();
       }
     }
   }, {
@@ -233,11 +230,13 @@ var App = exports.App = function (_React$Component) {
     value: function handleChange() {
       this.setState({ user: _AppStore2.default.getUser() });
     }
-  }, {
-    key: 'receiveUser',
-    value: function receiveUser(name) {
-      AppActions.currentUser(name);
-    }
+
+    //Temporary function for development
+
+    // receiveUser(name) {
+    //   AppActions.currentUser(name)
+    // }
+
   }, {
     key: 'render',
     value: function render() {
@@ -563,8 +562,16 @@ var Chat = function (_React$Component) {
           )
         );
       } else {
-        messageClass = "message-container chat-background";
-        messageList = _react2.default.createElement('div', { className: 'no-matches-messages' });
+        messageClass = "message-container awk-background";
+        messageList = _react2.default.createElement(
+          'div',
+          { className: 'no-matches-messages' },
+          _react2.default.createElement(
+            'h1',
+            { className: 'awk-text' },
+            'Well, this is awkward...'
+          )
+        );
       }
       var buttonColor = !this.state.input || !this.state.currentConvo ? { color: "grey" } : { color: "black" };
       return _react2.default.createElement(
@@ -702,7 +709,7 @@ var Login = exports.Login = function (_React$Component) {
           ),
           _react2.default.createElement(
             "a",
-            { href: "http://localhost:3000/login/facebook", className: "btn btn-primary" },
+            { href: "http://nsbdate.com:3000/login/facebook", className: "btn btn-primary" },
             "Sign-in/Sign up with Facebook"
           )
         )
@@ -1062,16 +1069,18 @@ var User = exports.User = function (_React$Component) {
   function User() {
     _classCallCheck(this, User);
 
+    //For development purposes.
+    // this.check = this.check.bind(this)
+    // this.amauris = this.amauris.bind(this)
+    // this.austin = this.austin.bind(this)
+    // this.maia = this.maia.bind(this)
+    // this.diffchick = this.diffchick.bind(this)
+    // this.lastgirl = this.lastgirl.bind(this)
+    // this.reggie = this.reggie.bind(this)
+
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(User).call(this));
 
-    _this.check = _this.check.bind(_this);
     _this.seekToggle = _this.seekToggle.bind(_this);
-    _this.amauris = _this.amauris.bind(_this);
-    _this.austin = _this.austin.bind(_this);
-    _this.maia = _this.maia.bind(_this);
-    _this.diffchick = _this.diffchick.bind(_this);
-    _this.lastgirl = _this.lastgirl.bind(_this);
-    _this.reggie = _this.reggie.bind(_this);
     _this.updateNotifications = _this.updateNotifications.bind(_this);
     _this.state = {
       user: _UserStore2.default.getUser(),
@@ -1094,11 +1103,16 @@ var User = exports.User = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
+      var _this3 = this;
+
       this.socket = (0, _socket2.default)();
       this.socket.on("updateNotifications", this.updateNotifications);
-      if (this.props.user._id) {
-        this.socket.emit('subscribe', this.props.user._id);
-      }
+      AppActions.currentUser();
+      setTimeout(function () {
+        if (_this3.props.user._id) {
+          _this3.socket.emit('subscribe', _this3.props.user._id);
+        }
+      }, 200);
     }
   }, {
     key: 'componentWillUnmount',
@@ -1115,88 +1129,72 @@ var User = exports.User = function (_React$Component) {
       this.setState({ user: user });
     }
   }, {
-    key: 'check',
-    value: function check() {
-      console.log(this.state.user, "state.user");
-      console.log(this.props, "props");
-    }
-  }, {
     key: 'updateNotifications',
     value: function updateNotifications(userId) {
       NavActions.getNotifications(userId);
     }
-  }, {
-    key: 'amauris',
-    value: function amauris() {
-      var _this3 = this;
 
-      AppActions.currentUser('Amauris');
-      this.setState({ tempSi: false });
-      setTimeout(function () {
-        NavActions.getNotifications(_this3.props.user._id);
-        _this3.socket.emit('subscribe', _this3.props.user._id);
-      }, 200);
-    }
-  }, {
-    key: 'austin',
-    value: function austin() {
-      var _this4 = this;
+    //Temporary Sign in functions for development
 
-      AppActions.currentUser('Austin');
-      this.setState({ tempSi: false });
-      setTimeout(function () {
-        NavActions.getNotifications(_this4.props.user._id);
-        _this4.socket.emit('subscribe', _this4.props.user._id);
-      }, 200);
-    }
-  }, {
-    key: 'maia',
-    value: function maia() {
-      var _this5 = this;
+    // check() {
+    //   console.log(this.state.user, "state.user")
+    //   console.log(this.props, "props")
+    // }
 
-      AppActions.currentUser('Maia');
-      this.setState({ tempSi: false });
-      setTimeout(function () {
-        NavActions.getNotifications(_this5.props.user._id);
-        _this5.socket.emit('subscribe', _this5.props.user._id);
-      }, 200);
-    }
-  }, {
-    key: 'diffchick',
-    value: function diffchick() {
-      var _this6 = this;
+    // amauris() {
+    //   AppActions.currentUser('Amauris')
+    //   this.setState({tempSi:false})
+    //   setTimeout(() => {
+    //     NavActions.getNotifications(this.props.user._id)
+    //     this.socket.emit('subscribe', this.props.user._id)
+    //   }, 200)
+    // }
 
-      AppActions.currentUser('Diff');
-      this.setState({ tempSi: false });
-      setTimeout(function () {
-        NavActions.getNotifications(_this6.props.user._id);
-        _this6.socket.emit('subscribe', _this6.props.user._id);
-      }, 200);
-    }
-  }, {
-    key: 'lastgirl',
-    value: function lastgirl() {
-      var _this7 = this;
+    // austin() {
+    //   AppActions.currentUser('Austin')
+    //   this.setState({tempSi:false})
+    //   setTimeout(() => {
+    //     NavActions.getNotifications(this.props.user._id)
+    //     this.socket.emit('subscribe', this.props.user._id)
+    //   }, 200)
+    // }
 
-      AppActions.currentUser('Last');
-      this.setState({ tempSi: false });
-      setTimeout(function () {
-        NavActions.getNotifications(_this7.props.user._id);
-        _this7.socket.emit('subscribe', _this7.props.user._id);
-      }, 200);
-    }
-  }, {
-    key: 'reggie',
-    value: function reggie() {
-      var _this8 = this;
+    // maia() {
+    //   AppActions.currentUser('Maia')
+    //   this.setState({tempSi:false})
+    //   setTimeout(() => {
+    //     NavActions.getNotifications(this.props.user._id)
+    //     this.socket.emit('subscribe', this.props.user._id)
+    //   }, 200)
+    // }
 
-      AppActions.currentUser('Reggie');
-      this.setState({ tempSi: false });
-      setTimeout(function () {
-        NavActions.getNotifications(_this8.props.user._id);
-        _this8.socket.emit('subscribe', _this8.props.user._id);
-      }, 200);
-    }
+    // diffchick() {
+    //   AppActions.currentUser('Diff')
+    //   this.setState({tempSi:false})
+    //   setTimeout(() => {
+    //     NavActions.getNotifications(this.props.user._id)
+    //     this.socket.emit('subscribe', this.props.user._id)
+    //   }, 200)
+    // }
+
+    // lastgirl() {
+    //   AppActions.currentUser('Last')
+    //   this.setState({tempSi:false})
+    //   setTimeout(() => {
+    //     NavActions.getNotifications(this.props.user._id)
+    //     this.socket.emit('subscribe', this.props.user._id)
+    //   }, 200)
+    // }
+
+    // reggie() {
+    //   AppActions.currentUser('Reggie')
+    //   this.setState({tempSi:false})
+    //   setTimeout(() => {
+    //     NavActions.getNotifications(this.props.user._id)
+    //     this.socket.emit('subscribe', this.props.user._id)
+    //   }, 200)
+    // }
+
   }, {
     key: 'render',
     value: function render() {
@@ -1207,41 +1205,6 @@ var User = exports.User = function (_React$Component) {
         'div',
         { className: 'container' },
         _react2.default.createElement(_NavBar2.default, { user: this.state.user }),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.check, className: tempSi },
-          'See State'
-        ),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.amauris, className: tempSi },
-          'Sign in as Amauris'
-        ),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.austin, className: tempSi },
-          'Sign in as Austin'
-        ),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.maia, className: tempSi },
-          'Sign in as Maia'
-        ),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.diffchick, className: tempSi },
-          'Sign in as Diff Chick'
-        ),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.lastgirl, className: tempSi },
-          'Sign in as Last Girl'
-        ),
-        _react2.default.createElement(
-          _reactBootstrap.Button,
-          { onClick: this.reggie, className: tempSi },
-          'Sign in as Reggie'
-        ),
         _react2.default.createElement(
           _Display2.default,
           { 'if': this.state.user.available },
@@ -1349,7 +1312,8 @@ var Video = function (_React$Component) {
 			waiting: true,
 			streaming: false,
 			previousChats: [],
-			counter: 60
+			counter: 60,
+			noneAvailable: false
 		};
 		return _this;
 	}
@@ -1362,7 +1326,7 @@ var Video = function (_React$Component) {
 			var peerId = this.props.user.cuid,
 			    fn = this.props.user.firstName,
 			    age = this.props.user.age;
-			this.peer = new Peer({ host: 'localhost', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId, firstName: fn, age: age } });
+			this.peer = new Peer({ host: 'nsbdate.com', port: 3000, debug: 3, path: '/connect', metadata: { cuid: peerId, firstName: fn, age: age } });
 			this.peer.on('open', this.nextMatch);
 			this.peer.on('call', this.onCall);
 			this.peer.on('error', this.error);
@@ -1464,7 +1428,8 @@ var Video = function (_React$Component) {
 						peerCuid: payload.peerCuid,
 						peerName: payload.peerName,
 						peerAge: payload.peerAge,
-						waiting: false
+						waiting: false,
+						noneAvailable: false
 					});
 					var call = _this5.peer.call(payload.peerId, mediaStream, { metadata: {
 							peerSocket: _this5.socket.id,
@@ -1523,12 +1488,12 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'notAvailable',
 		value: function notAvailable() {
-			this.setState({ waiting: true });
+			this.setState({ waiting: true, noneAvailable: false });
 		}
 	}, {
 		key: 'noEligibleUsers',
 		value: function noEligibleUsers() {
-			this.setState({ waiting: true });
+			this.setState({ waiting: true, noneAvailable: true });
 		}
 	}, {
 		key: 'usersChange',
@@ -1570,7 +1535,8 @@ var Video = function (_React$Component) {
 					peerCuid: call.metadata.peerCuid,
 					peerName: call.metadata.peerName,
 					peerAge: call.metadata.peerAge,
-					waiting: false
+					waiting: false,
+					noneAvailable: false
 				});
 				call.answer(mediaStream);
 				_this7.streamHandler(call);
@@ -1628,29 +1594,46 @@ var Video = function (_React$Component) {
 				'div',
 				null,
 				_react2.default.createElement(
-					'div',
-					{ id: 'vid-container' },
-					_react2.default.createElement('video', { id: 'my-video', src: this.state.waiting ? null : mySource, autoPlay: true }),
-					_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/videos/static3.mp4' : otherSource, autoPlay: true, muted: this.state.waiting, loop: this.state.waiting }),
+					_Display2.default,
+					{ 'if': this.state.noneAvailable },
 					_react2.default.createElement(
 						'div',
-						{ id: 'left-button-container' },
+						{ className: 'no-connected-users' },
 						_react2.default.createElement(
 							'p',
-							{ className: 'arrow-labels' },
-							'Not for me'
-						),
-						_react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'arrow-left', className: leftButtonClass, onClick: buttonStatus ? null : this.reject })
-					),
+							{ className: 'ncu-mssg' },
+							'There are no eligilble users for you to connect with at the moment. Please wait for more users to sign in or try again later.'
+						)
+					)
+				),
+				_react2.default.createElement(
+					_Display2.default,
+					{ 'if': !this.state.noneAvailable },
 					_react2.default.createElement(
 						'div',
-						{ id: 'right-button-container' },
+						{ id: 'vid-container' },
+						_react2.default.createElement('video', { id: 'my-video', src: this.state.waiting ? null : mySource, autoPlay: true }),
+						_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/videos/static3.mp4' : otherSource, autoPlay: true, muted: this.state.waiting, loop: this.state.waiting }),
 						_react2.default.createElement(
-							'p',
-							{ className: 'arrow-labels' },
-							'Like!'
+							'div',
+							{ id: 'left-button-container' },
+							_react2.default.createElement(
+								'p',
+								{ className: 'arrow-labels' },
+								'Not for me'
+							),
+							_react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'arrow-left', className: leftButtonClass, onClick: buttonStatus ? null : this.reject })
 						),
-						_react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'arrow-right', className: rightButtonClass, onClick: buttonStatus ? null : this.likeHandler })
+						_react2.default.createElement(
+							'div',
+							{ id: 'right-button-container' },
+							_react2.default.createElement(
+								'p',
+								{ className: 'arrow-labels' },
+								'Like!'
+							),
+							_react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'arrow-right', className: rightButtonClass, onClick: buttonStatus ? null : this.likeHandler })
+						)
 					)
 				),
 				_react2.default.createElement(
@@ -1682,7 +1665,7 @@ var Video = function (_React$Component) {
 				),
 				_react2.default.createElement(
 					_Display2.default,
-					{ 'if': this.state.waiting },
+					{ 'if': this.state.waiting && !this.state.noneAvailable },
 					_react2.default.createElement(
 						'h2',
 						{ id: 'wait-message' },
