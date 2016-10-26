@@ -134,7 +134,7 @@ export default class Video extends React.Component {
 
 	idRetrieval(payload) {
 		if (!this.state.streaming && this.state.waiting) {
-			const cam = navigator.mediaDevices.getUserMedia({audio: false, video: { width: 1280, height: 720 }})
+			const cam = navigator.mediaDevices.getUserMedia({audio: true, video: { width: 1280, height: 720 }})
 	     	cam.then( (mediaStream) => {
 	      	this.setState({
 		      	mySource: URL.createObjectURL(mediaStream), 
@@ -160,7 +160,7 @@ export default class Video extends React.Component {
 		this.setState({buttonStatus: true})
 		setTimeout(()=>{
 			this.setState({buttonStatus: false})
-		}, 2000)
+		}, 10000)
 	}
 
 	closeCall() {
@@ -222,7 +222,7 @@ export default class Video extends React.Component {
 	}
 
 	onCall(call) {
-		const cam = navigator.mediaDevices.getUserMedia({audio: false, video: { width: 1280, height: 720 }})
+		const cam = navigator.mediaDevices.getUserMedia({audio: true, video: { width: 1280, height: 720 }})
 	  	cam.then( (mediaStream) => {
 	    this.setState({
 	    	peerSocket: call.metadata.peerSocket, 
@@ -287,9 +287,9 @@ export default class Video extends React.Component {
         </Display>
         <Display if={!this.state.noneAvailable}>
   				<div id="vid-container">
-  					<video id='my-video' src={this.state.waiting ? null : mySource} autoPlay >
+  					<video id='my-video' src={this.state.waiting ? null : mySource} autoPlay muted="muted">
   					</video>
-  					<video id='other-video' src={this.state.waiting ? '/videos/static3.mp4' : otherSource} autoPlay muted={this.state.waiting} loop={this.state.waiting}>
+  					<video id='other-video' src={this.state.waiting ? '/videos/static3.mp4' : otherSource} autoPlay loop={this.state.waiting}>
   					</video>
   					<div id="left-button-container">
               <p className="arrow-labels">Not for me</p>

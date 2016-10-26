@@ -18,11 +18,12 @@ export class App extends React.Component {
     AppStore.on('change', this.handleChange)
   }
 
-  componentDidMount() {
-    if (!this.state.user.cuid){
-      AppActions.currentUser()
-    }   
-  }
+  //Temporary for development
+  // componentDidMount() {
+  //   if (!this.state.user.cuid){
+  //     AppActions.currentUser()
+  //   }
+  // }
 
   componentWillUnmount() {
     AppStore.removeListener('change', this.handleChange)

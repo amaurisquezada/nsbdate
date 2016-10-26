@@ -213,13 +213,14 @@ var App = exports.App = function (_React$Component) {
     value: function componentWillMount() {
       _AppStore2.default.on('change', this.handleChange);
     }
-  }, {
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      if (!this.state.user.cuid) {
-        AppActions.currentUser();
-      }
-    }
+
+    //Temporary for development
+    // componentDidMount() {
+    //   if (!this.state.user.cuid){
+    //     AppActions.currentUser()
+    //   }
+    // }
+
   }, {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
@@ -371,8 +372,7 @@ var Chat = function (_React$Component) {
 
       _ChatStore2.default.on('change', function () {
         _this2.setState({
-          convos: _ChatStore2.default.getConvos(),
-          input: ""
+          convos: _ChatStore2.default.getConvos()
         });
       });
       _ChatStore2.default.on('lastConvoChange', function () {
@@ -415,7 +415,7 @@ var Chat = function (_React$Component) {
           }
         }
         _this3.setState({ convoStatuses: newState });
-      }, 100);
+      }, 200);
     }
   }, {
     key: 'componentWillUnmount',
@@ -429,7 +429,7 @@ var Chat = function (_React$Component) {
     key: 'componentWillUpdate',
     value: function componentWillUpdate() {
       var node = _reactDom2.default.findDOMNode(this.refs.chatDiv);
-      this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+      this.shouldScrollBottom = node.scrollTop + node.offsetHeight >= node.scrollHeight;
     }
   }, {
     key: 'componentDidUpdate',
@@ -699,12 +699,12 @@ var Login = exports.Login = function (_React$Component) {
           { id: "login-container" },
           _react2.default.createElement(
             "h2",
-            null,
+            { className: "welcome" },
             "Welcome to NSB Date"
           ),
           _react2.default.createElement(
             "p",
-            null,
+            { className: "welcome-caption" },
             "Real-time dating app for the modern skeptic"
           ),
           _react2.default.createElement(
@@ -1131,6 +1131,7 @@ var User = exports.User = function (_React$Component) {
   }, {
     key: 'updateNotifications',
     value: function updateNotifications(userId) {
+      console.log(userId, "got to the user notifications");
       NavActions.getNotifications(userId);
     }
 
@@ -1421,7 +1422,7 @@ var Video = function (_React$Component) {
 			var _this5 = this;
 
 			if (!this.state.streaming && this.state.waiting) {
-				var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: { width: 1280, height: 720 } });
+				var cam = navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 1280, height: 720 } });
 				cam.then(function (mediaStream) {
 					_this5.setState({
 						mySource: URL.createObjectURL(mediaStream),
@@ -1452,7 +1453,7 @@ var Video = function (_React$Component) {
 			this.setState({ buttonStatus: true });
 			setTimeout(function () {
 				_this6.setState({ buttonStatus: false });
-			}, 2000);
+			}, 10000);
 		}
 	}, {
 		key: 'closeCall',
@@ -1527,7 +1528,7 @@ var Video = function (_React$Component) {
 		value: function onCall(call) {
 			var _this7 = this;
 
-			var cam = navigator.mediaDevices.getUserMedia({ audio: false, video: { width: 1280, height: 720 } });
+			var cam = navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 1280, height: 720 } });
 			cam.then(function (mediaStream) {
 				_this7.setState({
 					peerSocket: call.metadata.peerSocket,
@@ -1612,8 +1613,8 @@ var Video = function (_React$Component) {
 					_react2.default.createElement(
 						'div',
 						{ id: 'vid-container' },
-						_react2.default.createElement('video', { id: 'my-video', src: this.state.waiting ? null : mySource, autoPlay: true }),
-						_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/videos/static3.mp4' : otherSource, autoPlay: true, muted: this.state.waiting, loop: this.state.waiting }),
+						_react2.default.createElement('video', { id: 'my-video', src: this.state.waiting ? null : mySource, autoPlay: true, muted: 'muted' }),
+						_react2.default.createElement('video', { id: 'other-video', src: this.state.waiting ? '/videos/static3.mp4' : otherSource, autoPlay: true, loop: this.state.waiting }),
 						_react2.default.createElement(
 							'div',
 							{ id: 'left-button-container' },

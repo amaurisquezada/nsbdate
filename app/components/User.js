@@ -60,6 +60,7 @@ export class User extends React.Component {
   }
 
   updateNotifications(userId) {
+    console.log(userId, "got to the user notifications")
     NavActions.getNotifications(userId)
   }
 

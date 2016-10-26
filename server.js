@@ -7,6 +7,7 @@ var _ = require('underscore'),
     Conversation = require('./models/conversation'),
     cuid = require('cuid'),
     express = require('express'),
+    favicon = require('serve-favicon'),
     ExpressPeerServer = require('peer').ExpressPeerServer,
     logger = require('morgan'),
     Message = require('./models/message'),
@@ -27,6 +28,7 @@ var _ = require('underscore'),
     womenSeekingMen = [];
 
 //MongoDB Connection.
+mongoose.Promise = global.Promise;
 mongoose.connect(config.database);
 mongoose.connection.on('error', function() {
   console.info('Error: Could not connect to MongoDB. Did you forget to run `mongod`?');
@@ -91,6 +93,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(favicon(__dirname + '/public/img/favicon.png'));
 app.use(require('express-session')({ secret: 'keyboard kitten', resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -461,15 +464,18 @@ io.sockets.on('connection', function(socket){
           messages: [],
           dateCreated: date
         });
-        convo.save();
+        convo.save().then(function(convo){
+          var user1 = convo.user1._id,
+            user2 = convo.user2._id;
+            console.log(user1, "user1 from conversation save")
+            console.log(user2, "user2 from conversation save")
+          io.to(user1).emit('updateNotifications', user1);
+          io.to(user2).emit('updateNotifications', user2);
+        });
         user.conversations.push(convo);
         otherUser.conversations.push(convo);
         user.save();
         otherUser.save();
-        setTimeout(function(){
-          io.to(user1._id).emit('updateNotifications', user1._id);
-          io.to(user2._id).emit('updateNotifications', user2._id);
-        }, 200);
       });
     });
   });
@@ -507,7 +513,6 @@ io.sockets.on('connection', function(socket){
     socket.join(room); 
   });
 
-
   socket.on('updateUserLastClick', function(userId){
     User.findByIdAndUpdate(userId, {$set: {lastClickedChats: Date.now()}}, {new: true}, function(err, user) {
       if (err) return next(err);
@@ -519,8 +524,7 @@ io.sockets.on('connection', function(socket){
   //the chat component.
 
   socket.on('updateLastClicked', function(payload) {
-    var _this = this,
-        lcString = 'lastClicked.' + payload.userId,
+    var lcString = 'lastClicked.' + payload.userId,
         updatedAttr = {};
     updatedAttr[lcString] = Date.now();
     Conversation.findByIdAndUpdate(payload.convoId, {$set: updatedAttr}, {new: true}, function(err, convo) {
@@ -542,11 +546,10 @@ io.sockets.on('connection', function(socket){
       });
       message.save();
       convo.messages.push(message);
-      convo.save();
-      setTimeout(function(){
+      convo.save().then(function(convo){
         io.to(payload.convoId).emit('updateMessages', convo);
         io.to(payload.recipient).emit('updateNotifications', payload.recipient);
-      }, 200);
+      });
     });
   });
 

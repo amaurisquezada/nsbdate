@@ -30,8 +30,7 @@ export default class Chat extends React.Component {
 	componentWillMount() {
     ChatStore.on('change', () => {
       this.setState({
-        convos: ChatStore.getConvos(),
-        input: "",
+        convos: ChatStore.getConvos()
       })
     })
     ChatStore.on('lastConvoChange', () => {
@@ -71,7 +70,7 @@ export default class Chat extends React.Component {
 	  		}
 	  	}
 	  	this.setState({convoStatuses: newState})
-  	}, 100)
+  	}, 200)
   }
   
   componentWillUnmount() {
@@ -83,7 +82,7 @@ export default class Chat extends React.Component {
 
   componentWillUpdate() {
   	const node = ReactDOM.findDOMNode(this.refs.chatDiv)
-  	this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+  	this.shouldScrollBottom = node.scrollTop + node.offsetHeight >= node.scrollHeight;
   }
 
   componentDidUpdate() {
