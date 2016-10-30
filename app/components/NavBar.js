@@ -16,6 +16,7 @@ export default class NavBar extends React.Component {
 	}
 
   componentWillMount() {
+    //Navstore listener for new notification badges
     NavStore.on('change', () => {
       this.setState({
         notifications: NavStore.getNotifications()

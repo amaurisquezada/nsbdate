@@ -28,11 +28,13 @@ export default class Chat extends React.Component {
 	}
 
 	componentWillMount() {
+    //Store listener for a change in the total number on conversations.
     ChatStore.on('change', () => {
       this.setState({
         convos: ChatStore.getConvos()
       })
     })
+    //Store listener for a change in the most recent conversation.
     ChatStore.on('lastConvoChange', () => {
       this.setState({
         lastConvo: ChatStore.getLastConvo(),
@@ -43,6 +45,8 @@ export default class Chat extends React.Component {
   }
 
   componentDidMount() {
+    /*Retrieves all of the user's conversations. Creates a socket listener for each conversation to track new messages. Also checks to
+      see if any of the conversations' messages are more recent than the last time the conversation was viewed. */
     ReactDOM.findDOMNode(this.refs.form).focus()
   	this.socket = io()
 		this.socket.on('updateMessages', this.updateMessages)
@@ -81,11 +85,13 @@ export default class Chat extends React.Component {
   }
 
   componentWillUpdate() {
+    //Determines whether messages div should scroll to bottom on new message.
   	const node = ReactDOM.findDOMNode(this.refs.chatDiv)
   	this.shouldScrollBottom = node.scrollTop + node.offsetHeight >= node.scrollHeight;
   }
 
   componentDidUpdate() {
+     //Determines whether messages div should scroll to bottom on new message.
 	  if (this.shouldScrollBottom) {
 	    const node = ReactDOM.findDOMNode(this.refs.chatDiv)
 	    node.scrollTop = node.scrollHeight
@@ -98,6 +104,7 @@ export default class Chat extends React.Component {
   }
 
   onSubmit(e) {
+     //Sends new messages to the server via the socket.
   	e.preventDefault()
     const recipient = this.props.user.gender === "Female" ? this.state.currentConvo.user2 : this.state.currentConvo.user1,
   	      inputText = this.refs.form.value;
@@ -109,6 +116,9 @@ export default class Chat extends React.Component {
   } 
 
   updateMessages(payload) {
+    /*If the new message received should update the current conversation, replaces the state of the current conversation with the updated
+      version from the server. Otherwise, changes the ID of the conversation in the state to true which triggers a class change. The class
+      change renders a new message notification. */
   	if (this.state.currentConvo._id == payload._id) {
 			this.setState({
 				currentConvo: payload
@@ -127,6 +137,7 @@ export default class Chat extends React.Component {
   }
 
   onMatchClick(match, e) {
+    //Changes the conversation that was clicked to the current conversation. This triggers the conversation that was clicked to render.
     this.socket.emit('updateUserLastClick', this.props.user._id)
     NavActions.clearNotifications()
   	let update = {}
@@ -139,6 +150,8 @@ export default class Chat extends React.Component {
   }
 
 	render(){
+    /*Renders conversations and messages. Rendering depends on whether there are any conversations and whether a given conversation contains
+    any messages */
 		const currentUserId = this.props.user._id,
           convos = this.state.convos,
           convosList = convos.length > 0 ? convos.map((match, i) => {

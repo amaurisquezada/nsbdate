@@ -60,7 +60,6 @@ export class User extends React.Component {
   }
 
   updateNotifications(userId) {
-    console.log(userId, "got to the user notifications")
     NavActions.getNotifications(userId)
   }
 
@@ -126,6 +125,7 @@ export class User extends React.Component {
   // }
 
   render() {
+    //Primarily contains button that toggles the Video mount.
     const matching = this.state.user.available ? "Stop matching" : "Start matching!",
           buttonClass = this.state.user.available ? "btn btn-danger video-control" : "btn btn-info video-control",
           tempSi = this.state.tempSi ? "temp-si" : "hidden";

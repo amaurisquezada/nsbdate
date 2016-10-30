@@ -50,6 +50,7 @@ export default class Video extends React.Component {
 	}
 
 	componentWillMount() {
+    //Sets listeners for video chat signalling.
 		const peerId = this.props.user.cuid,
 		fn = this.props.user.firstName,
 		age = this.props.user.age;
@@ -86,6 +87,7 @@ export default class Video extends React.Component {
 	}
 
   outOfTime() {
+    //Chat countdown logic.
 		this.countdown ? clearInterval(this.countdown) : null
 		this.countdown = setInterval(() => {
   		if (this.state.counter > 0) {
@@ -98,6 +100,7 @@ export default class Video extends React.Component {
   }
 
   doubleLike() {
+    //If time runs out, assumes both users liked each other and signals a conversation creation to the server.
   	clearInterval(this.countdown)
   	if (this.props.user.gender === "Male"){
   	  this.socket.emit('likeToo', {myId:this.props.user.cuid, peerId:this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket})
@@ -109,6 +112,7 @@ export default class Video extends React.Component {
   }
 
 	nextMatch() {
+    //Sets appropriate action to find the user's next match dependent on the user's gender.
 		if (this.props.user.gender === "Female") {
 			this.femaleAction()
 		} else if (this.props.user.gender === "Male") {
@@ -133,6 +137,7 @@ export default class Video extends React.Component {
 	}
 
 	idRetrieval(payload) {
+    //Gets peer id from server and initiates the call. Gets camera from the user.
 		if (!this.state.streaming && this.state.waiting) {
 			const cam = navigator.mediaDevices.getUserMedia({audio: true, video: { width: 1280, height: 720 }})
 	     	cam.then( (mediaStream) => {
@@ -157,6 +162,7 @@ export default class Video extends React.Component {
 	}
 
 	buttonHandler() {
+    //Selection buttons are disabled to start the video chat to prevent sifting through matches too quickly.
 		this.setState({buttonStatus: true})
 		setTimeout(()=>{
 			this.setState({buttonStatus: false})
@@ -168,6 +174,7 @@ export default class Video extends React.Component {
 	}
 
 	reject() {
+    //Logic for when user rejects their video chat peer.
 		clearInterval(this.countdown)
 		this.socket.emit('rejected', this.state.peerSocket)
 		VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid)
@@ -175,6 +182,7 @@ export default class Video extends React.Component {
 	}
 
 	likeHandler() {
+    //Logic for when user likes their video chat peer. Different handling depending on whether or not a user has hit the like buton first.
 		clearInterval(this.countdown)
 		if(this.state.selecting){
 			this.socket.emit('likeToo', {myId:this.props.user.cuid, peerId:this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket})
@@ -186,19 +194,23 @@ export default class Video extends React.Component {
 	}
 
 	makeSelection() {
+    //Prompt to make a selection once the peer has hit the like button.
 		clearInterval(this.countdown)
 		this.setState({selecting:true})
 	}
 
 	notAvailable() {
+    //Changes state when the server responds with eligible peers that are all busy.
 		this.setState({waiting: true, noneAvailable: false})
 	}
 
 	noEligibleUsers() {
+    //Changes state when the server responds with no eligible users.
 		this.setState({waiting: true, noneAvailable: true})
 	}
 
 	usersChange(payload) {
+    //Prompts user to check for potential matches when a user signs on or becomes available.
 		const check = _.contains(this.state.previousChats, payload)
 		if (this.props.user.cuid != payload && !this.state.streaming && !check){
 			this.state.waiting ? this.nextMatch() : null			
@@ -222,6 +234,7 @@ export default class Video extends React.Component {
 	}
 
 	onCall(call) {
+    //Call handler when peer initiates call.
 		const cam = navigator.mediaDevices.getUserMedia({audio: true, video: { width: 1280, height: 720 }})
 	  	cam.then( (mediaStream) => {
 	    this.setState({
@@ -244,6 +257,7 @@ export default class Video extends React.Component {
 	}
 
 	streamHandler (call) {
+    //Call event listeners for the stream and the close.
 	  const user1 = this.props.user.gender ==="Female" ? this.props.user.cuid : this.state.peerCuid,
 	  user2 = this.props.user.gender ==="Male" ? this.props.user.cuid : this.state.peerCuid;
     call.on('stream', stream => {

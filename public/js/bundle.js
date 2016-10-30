@@ -370,11 +370,13 @@ var Chat = function (_React$Component) {
     value: function componentWillMount() {
       var _this2 = this;
 
+      //Store listener for a change in the total number on conversations.
       _ChatStore2.default.on('change', function () {
         _this2.setState({
           convos: _ChatStore2.default.getConvos()
         });
       });
+      //Store listener for a change in the most recent conversation.
       _ChatStore2.default.on('lastConvoChange', function () {
         _this2.setState({
           lastConvo: _ChatStore2.default.getLastConvo(),
@@ -388,6 +390,8 @@ var Chat = function (_React$Component) {
     value: function componentDidMount() {
       var _this3 = this;
 
+      /*Retrieves all of the user's conversations. Creates a socket listener for each conversation to track new messages. Also checks to
+        see if any of the conversations' messages are more recent than the last time the conversation was viewed. */
       _reactDom2.default.findDOMNode(this.refs.form).focus();
       this.socket = (0, _socket2.default)();
       this.socket.on('updateMessages', this.updateMessages);
@@ -428,12 +432,14 @@ var Chat = function (_React$Component) {
   }, {
     key: 'componentWillUpdate',
     value: function componentWillUpdate() {
+      //Determines whether messages div should scroll to bottom on new message.
       var node = _reactDom2.default.findDOMNode(this.refs.chatDiv);
       this.shouldScrollBottom = node.scrollTop + node.offsetHeight >= node.scrollHeight;
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
+      //Determines whether messages div should scroll to bottom on new message.
       if (this.shouldScrollBottom) {
         var node = _reactDom2.default.findDOMNode(this.refs.chatDiv);
         node.scrollTop = node.scrollHeight;
@@ -448,6 +454,7 @@ var Chat = function (_React$Component) {
   }, {
     key: 'onSubmit',
     value: function onSubmit(e) {
+      //Sends new messages to the server via the socket.
       e.preventDefault();
       var recipient = this.props.user.gender === "Female" ? this.state.currentConvo.user2 : this.state.currentConvo.user1,
           inputText = this.refs.form.value;
@@ -460,6 +467,9 @@ var Chat = function (_React$Component) {
   }, {
     key: 'updateMessages',
     value: function updateMessages(payload) {
+      /*If the new message received should update the current conversation, replaces the state of the current conversation with the updated
+        version from the server. Otherwise, changes the ID of the conversation in the state to true which triggers a class change. The class
+        change renders a new message notification. */
       if (this.state.currentConvo._id == payload._id) {
         this.setState({
           currentConvo: payload
@@ -480,6 +490,7 @@ var Chat = function (_React$Component) {
   }, {
     key: 'onMatchClick',
     value: function onMatchClick(match, e) {
+      //Changes the conversation that was clicked to the current conversation. This triggers the conversation that was clicked to render.
       this.socket.emit('updateUserLastClick', this.props.user._id);
       NavActions.clearNotifications();
       var update = {};
@@ -495,6 +506,8 @@ var Chat = function (_React$Component) {
     value: function render() {
       var _this4 = this;
 
+      /*Renders conversations and messages. Rendering depends on whether there are any conversations and whether a given conversation contains
+      any messages */
       var currentUserId = this.props.user._id,
           convos = this.state.convos,
           convosList = convos.length > 0 ? convos.map(function (match, i) {
@@ -615,7 +628,7 @@ exports.default = Chat;
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
-	value: true
+		value: true
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -633,26 +646,28 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Display = function (_React$Component) {
-	_inherits(Display, _React$Component);
+		_inherits(Display, _React$Component);
 
-	function Display() {
-		_classCallCheck(this, Display);
+		function Display() {
+				_classCallCheck(this, Display);
 
-		return _possibleConstructorReturn(this, Object.getPrototypeOf(Display).apply(this, arguments));
-	}
-
-	_createClass(Display, [{
-		key: 'render',
-		value: function render() {
-			return this.props.if ? _react2.default.createElement(
-				'div',
-				null,
-				this.props.children
-			) : null;
+				return _possibleConstructorReturn(this, Object.getPrototypeOf(Display).apply(this, arguments));
 		}
-	}]);
 
-	return Display;
+		_createClass(Display, [{
+				key: 'render',
+
+				//This component renders its children if the 'if' prop resolves to true. Helps with rendering logic in other components.
+				value: function render() {
+						return this.props.if ? _react2.default.createElement(
+								'div',
+								null,
+								this.props.children
+						) : null;
+				}
+		}]);
+
+		return Display;
 }(_react2.default.Component);
 
 exports.default = Display;
@@ -782,6 +797,7 @@ var NavBar = function (_React$Component) {
     value: function componentWillMount() {
       var _this2 = this;
 
+      //Navstore listener for new notification badges
       _NavStore2.default.on('change', function () {
         _this2.setState({
           notifications: _NavStore2.default.getNotifications()
@@ -1131,7 +1147,6 @@ var User = exports.User = function (_React$Component) {
   }, {
     key: 'updateNotifications',
     value: function updateNotifications(userId) {
-      console.log(userId, "got to the user notifications");
       NavActions.getNotifications(userId);
     }
 
@@ -1199,6 +1214,7 @@ var User = exports.User = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
+      //Primarily contains button that toggles the Video mount.
       var matching = this.state.user.available ? "Stop matching" : "Start matching!",
           buttonClass = this.state.user.available ? "btn btn-danger video-control" : "btn btn-info video-control",
           tempSi = this.state.tempSi ? "temp-si" : "hidden";
@@ -1324,6 +1340,7 @@ var Video = function (_React$Component) {
 		value: function componentWillMount() {
 			var _this2 = this;
 
+			//Sets listeners for video chat signalling.
 			var peerId = this.props.user.cuid,
 			    fn = this.props.user.firstName,
 			    age = this.props.user.age;
@@ -1365,6 +1382,7 @@ var Video = function (_React$Component) {
 		value: function outOfTime() {
 			var _this3 = this;
 
+			//Chat countdown logic.
 			this.countdown ? clearInterval(this.countdown) : null;
 			this.countdown = setInterval(function () {
 				if (_this3.state.counter > 0) {
@@ -1380,6 +1398,7 @@ var Video = function (_React$Component) {
 		value: function doubleLike() {
 			var _this4 = this;
 
+			//If time runs out, assumes both users liked each other and signals a conversation creation to the server.
 			clearInterval(this.countdown);
 			if (this.props.user.gender === "Male") {
 				this.socket.emit('likeToo', { myId: this.props.user.cuid, peerId: this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket });
@@ -1392,6 +1411,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'nextMatch',
 		value: function nextMatch() {
+			//Sets appropriate action to find the user's next match dependent on the user's gender.
 			if (this.props.user.gender === "Female") {
 				this.femaleAction();
 			} else if (this.props.user.gender === "Male") {
@@ -1421,6 +1441,7 @@ var Video = function (_React$Component) {
 		value: function idRetrieval(payload) {
 			var _this5 = this;
 
+			//Gets peer id from server and initiates the call. Gets camera from the user.
 			if (!this.state.streaming && this.state.waiting) {
 				var cam = navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 1280, height: 720 } });
 				cam.then(function (mediaStream) {
@@ -1450,6 +1471,7 @@ var Video = function (_React$Component) {
 		value: function buttonHandler() {
 			var _this6 = this;
 
+			//Selection buttons are disabled to start the video chat to prevent sifting through matches too quickly.
 			this.setState({ buttonStatus: true });
 			setTimeout(function () {
 				_this6.setState({ buttonStatus: false });
@@ -1463,6 +1485,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'reject',
 		value: function reject() {
+			//Logic for when user rejects their video chat peer.
 			clearInterval(this.countdown);
 			this.socket.emit('rejected', this.state.peerSocket);
 			VideoActions.addToPreviousChats(this.state.peerCuid, this.props.user.cuid);
@@ -1471,6 +1494,7 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'likeHandler',
 		value: function likeHandler() {
+			//Logic for when user likes their video chat peer. Different handling depending on whether or not a user has hit the like buton first.
 			clearInterval(this.countdown);
 			if (this.state.selecting) {
 				this.socket.emit('likeToo', { myId: this.props.user.cuid, peerId: this.state.peerCuid, myGender: this.props.user.gender, peerSocket: this.state.peerSocket });
@@ -1483,22 +1507,26 @@ var Video = function (_React$Component) {
 	}, {
 		key: 'makeSelection',
 		value: function makeSelection() {
+			//Prompt to make a selection once the peer has hit the like button.
 			clearInterval(this.countdown);
 			this.setState({ selecting: true });
 		}
 	}, {
 		key: 'notAvailable',
 		value: function notAvailable() {
+			//Changes state when the server responds with eligible peers that are all busy.
 			this.setState({ waiting: true, noneAvailable: false });
 		}
 	}, {
 		key: 'noEligibleUsers',
 		value: function noEligibleUsers() {
+			//Changes state when the server responds with no eligible users.
 			this.setState({ waiting: true, noneAvailable: true });
 		}
 	}, {
 		key: 'usersChange',
 		value: function usersChange(payload) {
+			//Prompts user to check for potential matches when a user signs on or becomes available.
 			var check = _underscore2.default.contains(this.state.previousChats, payload);
 			if (this.props.user.cuid != payload && !this.state.streaming && !check) {
 				this.state.waiting ? this.nextMatch() : null;
@@ -1528,6 +1556,7 @@ var Video = function (_React$Component) {
 		value: function onCall(call) {
 			var _this7 = this;
 
+			//Call handler when peer initiates call.
 			var cam = navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 1280, height: 720 } });
 			cam.then(function (mediaStream) {
 				_this7.setState({
@@ -1556,6 +1585,7 @@ var Video = function (_React$Component) {
 		value: function streamHandler(call) {
 			var _this8 = this;
 
+			//Call event listeners for the stream and the close.
 			var user1 = this.props.user.gender === "Female" ? this.props.user.cuid : this.state.peerCuid,
 			    user2 = this.props.user.gender === "Male" ? this.props.user.cuid : this.state.peerCuid;
 			call.on('stream', function (stream) {
