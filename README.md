@@ -1,6 +1,6 @@
 ## NSB Date
 
-NSB Date is a video dating app that employs live-video chats with connected users. Instead of simply viewing static photos and profiles 
+NSB Date is a video dating app that employs live video chats with connected users. Instead of simply viewing static photos and profiles 
 to determine compatibility, users are able to see and converse with potential matches.
 
 Click below to view a one-minute demo of the app in action.
