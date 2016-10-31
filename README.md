@@ -20,3 +20,5 @@ Click below to view a one-minute demo of the app in action.
 * Badge notifications to inform users when there's a new match or new messages.
 
 * Account editing to modify user details.
+
+* Minimalist design.
