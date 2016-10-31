@@ -4,6 +4,7 @@ NSB Date is a video dating app that employs live-video chats with connected user
 to determine compatibility, users are able to see and converse with potential matches.
 
 Click below to view a one-minute demo of the app in action.
+
 [https://amaurisquezada.github.io/pages/nsbd.html](https://amaurisquezada.github.io/pages/nsbd.html)
 
 **Features:**
